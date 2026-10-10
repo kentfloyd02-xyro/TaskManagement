@@ -1,0 +1,3002 @@
+[
+  {
+    "q": "A DevOps practice of automatically delivering code to production after passing all automated tests is ____?",
+    "a": [
+      "Right-based ethics",
+      "Continuous Deployment",
+      "Test case development",
+      "Sprint retrospective"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Obtaining explicit permission before using data is known as ____?",
+    "a": [
+      "Docker",
+      "Jenkins",
+      "Consent",
+      "Sprint"
+    ],
+    "c": 2
+  },
+  {
+    "q": "The phase in the Software Testing Life Cycle (STLC) that focuses on ____ based on requirements is Test case development?",
+    "a": [
+      "Designing and creating detailed validation scenarios",
+      "Containerization platform for environment consistency",
+      "Using diverse languages and tools per microservice",
+      "Enables communication and data exchange between apps"
+    ],
+    "c": 0
+  },
+  {
+    "q": "The ethical theory that stresses the fundamental importance of protecting individual rights is ____?",
+    "a": [
+      "Software deployment",
+      "Decentralized Data",
+      "Right-based ethics",
+      "Coding in DevOps"
+    ],
+    "c": 2
+  },
+  {
+    "q": "A benefit of DevOps that helps reduce manual work and decrease human error is ____?",
+    "a": [
+      "Sprint review",
+      "Daily scrum",
+      "Scrum Master",
+      "Automation"
+    ],
+    "c": 3
+  },
+  {
+    "q": "DevOps works by choosing to ____development and operations?",
+    "a": [
+      "Continuous Deployment",
+      "Application Programming Interface",
+      "Integrate in single and continuous process",
+      "Software Testing Life Cycle"
+    ],
+    "c": 2
+  },
+  {
+    "q": "A tool used to track the status of tasks during a sprint is a ____?",
+    "a": [
+      "Sprint board",
+      "Scrum Master",
+      "Virtue Ethics",
+      "Fast Delivery"
+    ],
+    "c": 0
+  },
+  {
+    "q": "The ethical theory that emphasizes the greatest good for the greatest number of people is ____?",
+    "a": [
+      "Transparency",
+      "Sprint review",
+      "Product backlog",
+      "Utilitarianism"
+    ],
+    "c": 3
+  },
+  {
+    "q": "The practice that automates code changes and the subsequent delivery of new features and updates is ____?",
+    "a": [
+      "IPR",
+      "Sprint",
+      "Agile",
+      "CI/CD"
+    ],
+    "c": 3
+  },
+  {
+    "q": "The ethical theory that emphasizes the character of individuals and ethical behavior as central is ____?",
+    "a": [
+      "Virtue Ethics",
+      "Sprint board",
+      "Test execution",
+      "Fast Delivery"
+    ],
+    "c": 0
+  },
+  {
+    "q": "A type of testing that checks how a system performs under heavy load is ____?",
+    "a": [
+      "Performance Testing",
+      "Continuous Integration",
+      "Coding in DevOps",
+      "Software deployment"
+    ],
+    "c": 0
+  },
+  {
+    "q": "A time-boxed meeting where the team discusses what was done, what will be done, and any blockers is the ____?",
+    "a": [
+      "Sprint board",
+      "Automation",
+      "All of them",
+      "Daily scrum"
+    ],
+    "c": 3
+  },
+  {
+    "q": "A software component that acts as an entry point to a system, routing requests to the appropriate micro- services, is an ____?",
+    "a": [
+      "Monolithic",
+      "Collaboration",
+      "Sprint board",
+      "API Gateway"
+    ],
+    "c": 3
+  },
+  {
+    "q": "A containerization platform often used in CI/CD to ensure consistent environments across development and production is ____?",
+    "a": [
+      "Docker",
+      "Git",
+      "Consent",
+      "CI/CD"
+    ],
+    "c": 0
+  },
+  {
+    "q": "The quality of allowing information to pass through and being clear about the data to be collected is ____?",
+    "a": [
+      "Product Owner",
+      "Transparency",
+      "Scrum Master",
+      "Sprint board"
+    ],
+    "c": 1
+  },
+  {
+    "q": "A framework that uses time-boxed iterations called sprints to deliver product increments is ____?",
+    "a": [
+      "Consent",
+      "Agile",
+      "Scrum",
+      "CI/CD"
+    ],
+    "c": 2
+  },
+  {
+    "q": "A practice that allows development and operations teams to collaborate and automate workflows is ____?",
+    "a": [
+      "Monolithic",
+      "DevOps",
+      "Automation",
+      "Sprint"
+    ],
+    "c": 1
+  },
+  {
+    "q": "An aspect of DevOps that emphasizes a cultural shift and shared responsibility between development and operations teams is ____?",
+    "a": [
+      "Collaboration",
+      "Product backlog",
+      "Unit Testing",
+      "Deployment"
+    ],
+    "c": 0
+  },
+  {
+    "q": "An end-to-end process that evaluates fully integrated components to verify they meet defined requirements is ____?",
+    "a": [
+      "Virtue Ethics",
+      "Sprint review",
+      "Transparency",
+      "System Testing"
+    ],
+    "c": 3
+  },
+  {
+    "q": "A session held at the end of each sprint to inspect the increment and gather feedback from stakeholders is the ____?",
+    "a": [
+      "Utilitarianism",
+      "Virtue Ethics",
+      "All of them",
+      "Sprint review"
+    ],
+    "c": 3
+  },
+  {
+    "q": "An event where the Scrum team reflects on the past sprint to improve future sprints is the ____?",
+    "a": [
+      "Coding in DevOps",
+      "Environment preparation",
+      "Product backlog",
+      "Sprint retrospective"
+    ],
+    "c": 3
+  },
+  {
+    "q": "The principle of collecting, processing, and storing only the necessary data to achieve a specific, defined purpose is ____?",
+    "a": [
+      "Coding in DevOps",
+      "Data Minimization",
+      "Requirement Analysis",
+      "Test execution"
+    ],
+    "c": 1
+  },
+  {
+    "q": "A challenge in DevOps is that it depends heavily on reliable servers, cloud platforms, and automation tools, requiring a ____?",
+    "a": [
+      "Software deployment",
+      "Performance Testing",
+      "Strong Infrastructure",
+      "Decentralized Data"
+    ],
+    "c": 2
+  },
+  {
+    "q": "The phase of the Software Testing Life Cycle (STLC) where actual results are compared against expected results and defects are identified is ____?",
+    "a": [
+      "Sprint review",
+      "Data Minimization",
+      "Test execution",
+      "System Testing"
+    ],
+    "c": 2
+  },
+  {
+    "q": "A version control system commonly used in DevOps pipelines to manage source code is ____?",
+    "a": [
+      "Agile",
+      "Git",
+      "Sprint",
+      "CI/CD"
+    ],
+    "c": 1
+  },
+  {
+    "q": "A fixed-length event in Scrum, usually 1–4 weeks, during which a potentially shippable product increment is developed is a ____?",
+    "a": [
+      "Sprint",
+      "Docker",
+      "Agile",
+      "Consent"
+    ],
+    "c": 0
+  },
+  {
+    "q": "The phase of the Software Testing Life Cycle (STLC) that involves analyzing software requirements from a testing perspective is ____?",
+    "a": [
+      "Continuous Integration",
+      "Performance Testing",
+      "Sprint retrospective",
+      "Requirement Analysis"
+    ],
+    "c": 3
+  },
+  {
+    "q": "A testing approach that verifies how different software components communicate when combined into a single unit is ____?",
+    "a": [
+      "Database updates",
+      "Integration testing",
+      "Requirement Analysis",
+      "Decentralized Data"
+    ],
+    "c": 1
+  },
+  {
+    "q": "The process of making software available for use in a specific environment is ____?",
+    "a": [
+      "Software deployment",
+      "Decentralized Data",
+      "Acceptance Testing",
+      "Sprint retrospective"
+    ],
+    "c": 0
+  },
+  {
+    "q": "The acronym IPR stands for ____?",
+    "a": [
+      "Yes, coding skills are required",
+      "End-user testing before release",
+      "Intellectual Property Rights",
+      "Clarity about data collection practices"
+    ],
+    "c": 2
+  },
+  {
+    "q": "The microservice characteristic that allows teams to use different programming languages, databases, or tools for each service is ____?",
+    "a": [
+      "Technology Flexibility",
+      "Environment preparation",
+      "Strong Infrastructure",
+      "Continuous Deployment"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Helpful methods for coding in DevOps include ____, meaning All of themare highly useful?",
+    "a": [
+      "Configuration languages, Infrastructure as Code, and CI/CD configuration",
+      "Migrating or updating schemas for new software versions",
+      "Verifying communication between combined software components",
+      "Inspecting the increment and gathering stakeholder feedback"
+    ],
+    "c": 0
+  },
+  {
+    "q": "The modern approach to project management and software development that promotes collaboration and flexibility is ____?",
+    "a": [
+      "DevOps",
+      "Agile",
+      "Scrum",
+      "CI/CD"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Which statement best describes Coding in DevOps?",
+    "a": [
+      "Intellectual Property Rights",
+      "Yes, coding skills are required",
+      "Testing individual software components",
+      "End-user testing before release"
+    ],
+    "c": 1
+  },
+  {
+    "q": "An automation platform that deploys software and supports CI/CD pipelines is ____?",
+    "a": [
+      "Agile",
+      "DevOps",
+      "Jenkins",
+      "CI/CD"
+    ],
+    "c": 2
+  },
+  {
+    "q": "A benefit of DevOps that helps organizations release features more quickly to meet customer demands is ____?",
+    "a": [
+      "System Testing",
+      "Collaboration",
+      "Product Owner",
+      "Fast Delivery"
+    ],
+    "c": 3
+  },
+  {
+    "q": "The process of moving software changes from one environment to another is called ____?",
+    "a": [
+      "API Gateway",
+      "Deployment",
+      "Automation",
+      "Unit Testing"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Migrating or updating schemas as data required by a new software version is referred to as ____?",
+    "a": [
+      "Database updates",
+      "Coding in DevOps",
+      "Product backlog",
+      "Performance Testing"
+    ],
+    "c": 0
+  },
+  {
+    "q": "The leader who facilitates the process and removes impediments for the team is the ____?",
+    "a": [
+      "Collaboration",
+      "Unit Testing",
+      "Scrum Master",
+      "API Gateway"
+    ],
+    "c": 2
+  },
+  {
+    "q": "The software testing methodology phase that describes setting up the specific set of components for a system to operate is ____?",
+    "a": [
+      "Performance Testing",
+      "Environment preparation",
+      "Micro-service Architecture",
+      "Technology Flexibility"
+    ],
+    "c": 1
+  },
+  {
+    "q": "The person responsible for maximizing the value of the product is the ____?",
+    "a": [
+      "Product Owner",
+      "Collaboration",
+      "Sprint board",
+      "System Testing"
+    ],
+    "c": 0
+  },
+  {
+    "q": "The software model that offers initial simplicity for development and deployment but becomes complex to maintain, scale, and update is ____?",
+    "a": [
+      "Deployment",
+      "Monolithic",
+      "Automation",
+      "Scrum Master"
+    ],
+    "c": 1
+  },
+  {
+    "q": "The testing phase performed by end users before releasing a product is ____?",
+    "a": [
+      "Software deployment",
+      "Acceptance Testing",
+      "Test case development",
+      "Requirement Analysis"
+    ],
+    "c": 1
+  },
+  {
+    "q": "A prioritized list of features, enhancements, bug fixes, and technical tasks for a product is the ____?",
+    "a": [
+      "Decentralized Data",
+      "Coding in DevOps",
+      "Product backlog",
+      "Collaboration"
+    ],
+    "c": 2
+  },
+  {
+    "q": "The software testing phase where individual components of the software are tested is ____?",
+    "a": [
+      "Daily scrum",
+      "Sprint board",
+      "Unit Testing",
+      "Scrum Master"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Products that allow different software applications to communicate, exchange data, and share functionality are known as ____solutions?",
+    "a": [
+      "Application Programming Interface",
+      "Environment preparation",
+      "Micro-service Architecture",
+      "Integrate in single and continuous process"
+    ],
+    "c": 0
+  },
+  {
+    "q": "A structured process of testing that ensures the requirements and quality of the software is the ____?",
+    "a": [
+      "Technology Flexibility",
+      "Micro-service Architecture",
+      "Application Programming Interface",
+      "Software Testing Life Cycle"
+    ],
+    "c": 3
+  },
+  {
+    "q": "A software development practice where code changes are automatically built, tested, and merged to a shared repository is ____?",
+    "a": [
+      "Technology Flexibility",
+      "Continuous Integration",
+      "Integration testing",
+      "Data Minimization"
+    ],
+    "c": 1
+  },
+  {
+    "q": "The architectural pattern where each service has its own database instead of sharing one central database is ____?",
+    "a": [
+      "Right-based ethics",
+      "Software deployment",
+      "Decentralized Data",
+      "Product backlog"
+    ],
+    "c": 2
+  },
+  {
+    "q": "An architectural style where each service is responsible for a specific business function, runs independently, and communicates through lightweight protocols is ____?",
+    "a": [
+      "Environment preparation",
+      "Software Testing Life Cycle",
+      "Sprint retrospective",
+      "Micro-service Architecture"
+    ],
+    "c": 3
+  },
+  {
+    "q": "In asymmetric encryption, the key that is normally kept secret by its owner is the ____?",
+    "a": [
+      "Compliance",
+      "Private key",
+      "Caesar cipher",
+      "Vulnerability"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Which statement best describes Secure SDLC?",
+    "a": [
+      "Following laws, regulations, standards, and policies",
+      "Addressing security throughout software development",
+      "Kept secret by its owner in asymmetric encryption",
+      "Protecting information using mathematical techniques"
+    ],
+    "c": 1
+  },
+  {
+    "q": "____ in information security refers to following applicable laws, regulations, standards, and policies?",
+    "a": [
+      "Compliance",
+      "SQL injection",
+      "Cryptography",
+      "Vulnerability"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Security testing should ideally be ____?",
+    "a": [
+      "Integrated throughout the development lifecycle",
+      "Manipulating database queries via input forms",
+      "Identifies security weaknesses in source code",
+      "Stopping activities that create unacceptable risk"
+    ],
+    "c": 0
+  },
+  {
+    "q": "A vulnerability is best described as ____?",
+    "a": [
+      "Demonstrates need for mobile encryption",
+      "Easier and less costly to address",
+      "Transformed or encrypted plaintext",
+      "A weakness that could be exploited"
+    ],
+    "c": 3
+  },
+  {
+    "q": "Which statement best describes Disabling services?",
+    "a": [
+      "Targets database-driven applications",
+      "Reduces the system's attack surface",
+      "Uses a public key and a private key",
+      "Efficient for large amounts of data"
+    ],
+    "c": 1
+  },
+  {
+    "q": "____ means reducing security weaknesses through secure configuration and controls?",
+    "a": [
+      "System hardening",
+      "Disabling services",
+      "Patch management",
+      "Risk avoidance"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Which statement best describes Mobile encryption?",
+    "a": [
+      "Executing unintended code or crashing programs",
+      "Evaluating effectiveness of security controls",
+      "Parameterized queries or prepared statements",
+      "Protects stored data from unauthorized access"
+    ],
+    "c": 3
+  },
+  {
+    "q": "The main operation performed by a ____ is that it replaces characters using a fixed shift in the alphabet?",
+    "a": [
+      "Security risk",
+      "Caesar cipher",
+      "OS hardening",
+      "SQL injection"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Which statement best describes Risk mitigation purpose?",
+    "a": [
+      "Evidence of following security procedures",
+      "Protecting sensitive files on a smartphone",
+      "Reducing likelihood or impact of risks",
+      "Implementing stronger access controls"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Which statement best describes Open-source benefit?",
+    "a": [
+      "Identifies security weaknesses in source code",
+      "Evidence of following security procedures",
+      "Independent review for security weaknesses",
+      "Reducing weaknesses via secure configuration"
+    ],
+    "c": 2
+  },
+  {
+    "q": "An example of a secure coding practice is ____?",
+    "a": [
+      "Strong authentication and user permissions",
+      "Reducing weaknesses via secure configuration",
+      "Protecting sensitive files on a smartphone",
+      "Validating and sanitizing untrusted input"
+    ],
+    "c": 3
+  },
+  {
+    "q": "The principle that recommends giving users and applications only the access they need is ____?",
+    "a": [
+      "Least privilege",
+      "Security testing",
+      "Secure SDLC goal",
+      "Caesar cipher"
+    ],
+    "c": 0
+  },
+  {
+    "q": "A security risk is best described as ____?",
+    "a": [
+      "Simple substitution cipher",
+      "Reduces the system's attack surface",
+      "Anything that can cause harm",
+      "Original readable information"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Stronger system security is provided by a combination of regular ____?",
+    "a": [
+      "Lost/compromised keys affect encrypted data security",
+      "Patching, secure configuration, access control, and monitoring",
+      "Tests running applications for security vulnerabilities",
+      "Applying software updates for bugs and vulnerabilities"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Which statement best describes Regular patching?",
+    "a": [
+      "Addressing security throughout software development",
+      "Building secure software throughout its lifecycle",
+      "Addresses known vulnerabilities before exploitation",
+      "Protecting information using mathematical techniques"
+    ],
+    "c": 2
+  },
+  {
+    "q": "____ is defined as a process of identifying potential threats and analyzing how they could affect a system?",
+    "a": [
+      "Threat modeling",
+      "Secure SDLC goal",
+      "Least privilege",
+      "Strong security"
+    ],
+    "c": 0
+  },
+  {
+    "q": "The activity commonly used to identify security weaknesses in source code is Static Application Security Testing (____)?",
+    "a": [
+      "DAST",
+      "Plaintext",
+      "Secure SDLC",
+      "SAST"
+    ],
+    "c": 3
+  },
+  {
+    "q": "Which statement best describes Mobile encryption use?",
+    "a": [
+      "Evidence of following security procedures",
+      "Protecting sensitive files on a smartphone",
+      "Independent review for security weaknesses",
+      "Identified during requirements analysis"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Which statement best describes Buffer overflow impact?",
+    "a": [
+      "Parameterized queries or prepared statements",
+      "Manipulating database queries via input forms",
+      "Evaluating effectiveness of security controls",
+      "Executing unintended code or crashing programs"
+    ],
+    "c": 3
+  },
+  {
+    "q": "____ is defined as the transformed or encrypted form of plaintext?",
+    "a": [
+      "Ciphertext",
+      "SQL injection",
+      "Compliance",
+      "Caesar cipher"
+    ],
+    "c": 0
+  },
+  {
+    "q": "A coding practice that can help prevent SQL injection is using ____?",
+    "a": [
+      "Evaluating effectiveness of security controls",
+      "Parameterized queries or prepared statements",
+      "Identifies security weaknesses in source code",
+      "Executing unintended code or crashing programs"
+    ],
+    "c": 1
+  },
+  {
+    "q": "The Caesar cipher is correctly described as a ____?",
+    "a": [
+      "Simple substitution cipher",
+      "Likelihood and impact",
+      "Efficient for large amounts of data",
+      "Anything that can cause harm"
+    ],
+    "c": 0
+  },
+  {
+    "q": "____ primarily helps protect data stored on or transmitted by mobile devices?",
+    "a": [
+      "Regular patching",
+      "Mobile encryption",
+      "Risk avoidance",
+      "Strong security"
+    ],
+    "c": 1
+  },
+  {
+    "q": "The main purpose of a ____ is to identify and evaluate whether security controls are working effectively?",
+    "a": [
+      "Buffer overflow",
+      "Caesar cipher",
+      "Security audit",
+      "Least privilege"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Which statement best describes Preventing unauthorized access?",
+    "a": [
+      "Strong authentication and user permissions",
+      "Executing unintended code or crashing programs",
+      "Evaluating effectiveness of security controls",
+      "Reducing weaknesses via secure configuration"
+    ],
+    "c": 0
+  },
+  {
+    "q": "____ is defined as information in its original readable form?",
+    "a": [
+      "Key management",
+      "DAST",
+      "Plaintext",
+      "OS hardening"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Which statement best describes Encryption practice?",
+    "a": [
+      "Source code available for inspection",
+      "Keep keys and credentials secure",
+      "Disabling unnecessary services",
+      "Efficient for large amounts of data"
+    ],
+    "c": 1
+  },
+  {
+    "q": "A ____ vulnerability is a condition in which a program writes more data to a buffer than it can properly hold?",
+    "a": [
+      "Risk avoidance",
+      "SQL injection",
+      "Buffer overflow",
+      "Secure SDLC goal"
+    ],
+    "c": 2
+  },
+  {
+    "q": "The type of encryption that uses the ____ is symmetric encryption?",
+    "a": [
+      "Identified during requirements analysis",
+      "Reducing likelihood or impact of risks",
+      "Targets database-driven applications",
+      "Same key for encryption and decryption"
+    ],
+    "c": 3
+  },
+  {
+    "q": "____ is important in encryption because lost or compromised keys can affect the security of encrypted information?",
+    "a": [
+      "Risk assessment",
+      "Key management",
+      "Caesar cipher",
+      "Security audit"
+    ],
+    "c": 1
+  },
+  {
+    "q": "The primary purpose of ____ is to protect information using mathematical techniques?",
+    "a": [
+      "Secure SDLC",
+      "Security risk",
+      "OS hardening",
+      "Cryptography"
+    ],
+    "c": 3
+  },
+  {
+    "q": "An example of operating system hardening is ____?",
+    "a": [
+      "Efficient for large amounts of data",
+      "Disabling unnecessary services",
+      "Uses a public key and a private key",
+      "Keep keys and credentials secure"
+    ],
+    "c": 1
+  },
+  {
+    "q": "The primary purpose of ____ in information security is to identify, analyze, and evaluate security risks?",
+    "a": [
+      "Strong security",
+      "Risk mitigation",
+      "Buffer overflow",
+      "Risk assessment"
+    ],
+    "c": 3
+  },
+  {
+    "q": "An example of a risk mitigation technique is ____?",
+    "a": [
+      "Demonstrates need for mobile encryption",
+      "Implementing stronger access controls",
+      "Uses a public key and a private key",
+      "Identified during requirements analysis"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Identifying vulnerabilities early in software development is beneficial because vulnerabilities are generally ____ early?",
+    "a": [
+      "A weakness that could be exploited",
+      "Efficient for large amounts of data",
+      "Reducing likelihood or impact of risks",
+      "Easier and less costly to address"
+    ],
+    "c": 3
+  },
+  {
+    "q": "An attack where an attacker enters specially crafted SQL input into a login form to manipulate a database query is known as ____?",
+    "a": [
+      "Secure SDLC",
+      "SQL injection",
+      "Cryptography",
+      "Secure coding"
+    ],
+    "c": 1
+  },
+  {
+    "q": "A major characteristic of asymmetric encryption is that it ____?",
+    "a": [
+      "Implementing stronger access controls",
+      "Easier and less costly to address",
+      "Targets database-driven applications",
+      "Uses a public key and a private key"
+    ],
+    "c": 3
+  },
+  {
+    "q": "The document that can provide evidence that an organization follows required security procedures is a ____?",
+    "a": [
+      "Security audit report",
+      "Disabling services",
+      "Mobile encryption use",
+      "Open-source benefit"
+    ],
+    "c": 0
+  },
+  {
+    "q": "The factors commonly considered when evaluating risk are ____?",
+    "a": [
+      "Simple substitution cipher",
+      "Likelihood and impact",
+      "Keep keys and credentials secure",
+      "Anything that can cause harm"
+    ],
+    "c": 1
+  },
+  {
+    "q": "If a Caesar cipher uses a shift of 3, the letter ____?",
+    "a": [
+      "Original readable information",
+      "Likelihood and impact",
+      "Disabling unnecessary services",
+      "A becomes D"
+    ],
+    "c": 3
+  },
+  {
+    "q": "The primary purpose of ____ is to manage and apply software updates that address bugs and security vulnerabilities?",
+    "a": [
+      "Patch management",
+      "Mobile encryption",
+      "Secure SDLC goal",
+      "Regular patching"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Which statement best describes Lost smartphone with confidential files?",
+    "a": [
+      "Demonstrates need for mobile encryption",
+      "Efficient for large amounts of data",
+      "Reducing likelihood or impact of risks",
+      "Evidence of following security procedures"
+    ],
+    "c": 0
+  },
+  {
+    "q": "____ should be identified during the SDLC activity of requirements analysis?",
+    "a": [
+      "Encryption practice",
+      "Security requirements",
+      "Symmetric encryption",
+      "Open-source encryption"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Which statement best describes Secure SDLC goal?",
+    "a": [
+      "Addressing security throughout software development",
+      "Executing unintended code or crashing programs",
+      "Kept secret by its owner in asymmetric encryption",
+      "Building secure software throughout its lifecycle"
+    ],
+    "c": 3
+  },
+  {
+    "q": "The activity that tests a running application for security vulnerabilities is Dynamic Application Security Testing (____)?",
+    "a": [
+      "Secure coding",
+      "Plaintext",
+      "SAST",
+      "DAST"
+    ],
+    "c": 3
+  },
+  {
+    "q": "An ____ application is encryption software whose source code is available for inspection under its license?",
+    "a": [
+      "Security audit report",
+      "Symmetric encryption",
+      "Asymmetric encryption",
+      "Open-source encryption"
+    ],
+    "c": 3
+  },
+  {
+    "q": "Which statement best describes Symmetric encryption advantage?",
+    "a": [
+      "Efficient for large amounts of data",
+      "Uses a public key and a private key",
+      "Easier and less costly to address",
+      "Same key for encryption and decryption"
+    ],
+    "c": 0
+  },
+  {
+    "q": "The risk response that involves completely stopping an activity that creates unacceptable risk is ____?",
+    "a": [
+      "Vulnerability",
+      "Risk avoidance",
+      "Security risk",
+      "Security audit"
+    ],
+    "c": 1
+  },
+  {
+    "q": "SQL injection primarily ____?",
+    "a": [
+      "Source code available for inspection",
+      "Efficient for large amounts of data",
+      "Targets database-driven applications",
+      "Uses a public key and a private key"
+    ],
+    "c": 2
+  },
+  {
+    "q": "In project initiation, a '____' is defined as a limitation or restriction that affects the project's success factors?",
+    "a": [
+      "Project Business Case",
+      "Project Constraint",
+      "Cost Justification",
+      "Project Stakeholders"
+    ],
+    "c": 1
+  },
+  {
+    "q": "The primary objective of the ____ section in a business case is to provide a timeline for the project and key milestones?",
+    "a": [
+      "Timeframe and Milestones",
+      "Project Charter purpose",
+      "Approved Project Charter",
+      "Initiation phase objective"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Which statement best describes Business Case output?",
+    "a": [
+      "Outline how and when benefits are realized and measured",
+      "Assess technical, operational, and economic feasibility",
+      "Anyone affected by or interested in the project",
+      "Comprehensive justification for project and approval"
+    ],
+    "c": 3
+  },
+  {
+    "q": "When defining project objectives during initiation, the acronym SMART stands for ____?",
+    "a": [
+      "Specific, Measurable, Achievable, Relevant, Time-bound",
+      "Identify and categorize stakeholders and interests",
+      "Document assumptions and constraints impacting the project",
+      "Assess technical, operational, and economic feasibility"
+    ],
+    "c": 0
+  },
+  {
+    "q": "The main goal of a ____ section in a business case is to outline how the project will comply with relevant laws, regulations, and standards?",
+    "a": [
+      "Stakeholder Register",
+      "Project Stakeholders",
+      "Project Scope Statement",
+      "Regulatory Compliance"
+    ],
+    "c": 3
+  },
+  {
+    "q": "The significance of the ____ section in a business case is to explore and evaluate different options or approaches to achieve project objectives?",
+    "a": [
+      "Cost Management Plan",
+      "Stakeholder Analysis",
+      "Project Business Case",
+      "Alternatives Analysis"
+    ],
+    "c": 3
+  },
+  {
+    "q": "The document that formally authorizes the project to begin in the initiation phase is the ____?",
+    "a": [
+      "Break-Even Point",
+      "Project Sponsor",
+      "Project Charter",
+      "Risk Assessment"
+    ],
+    "c": 2
+  },
+  {
+    "q": "The purpose of a ____ in a business case is to define how project costs will be estimated, budgeted, and controlled?",
+    "a": [
+      "Stakeholder Register",
+      "Strategic Alignment",
+      "Cost Management Plan",
+      "Regulatory Compliance"
+    ],
+    "c": 2
+  },
+  {
+    "q": "In project initiation, the term '____' refers to anyone who might be affected by the project or has an interest in it?",
+    "a": [
+      "Strategic Alignment",
+      "Stakeholder Analysis",
+      "Stakeholder Register",
+      "Project Stakeholders"
+    ],
+    "c": 3
+  },
+  {
+    "q": "The purpose of a ____ in project initiation is to identify and categorize project stakeholders and their interests?",
+    "a": [
+      "Cost-Benefit Analysis",
+      "Project Stakeholders",
+      "Stakeholder Register",
+      "Strategic Alignment"
+    ],
+    "c": 2
+  },
+  {
+    "q": "What is the primary purpose of a business case?",
+    "a": [
+      "Justification of project benefits and costs",
+      "Responsible for creating the business case",
+      "Provide project timeline and key milestones",
+      "Determine if project is viable and achievable"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Which document is used during initiation to define project boundaries, deliverables, and acceptance criteria?",
+    "a": [
+      "Cost Management Plan",
+      "Project Scope Statement",
+      "Project Kickoff Meeting",
+      "Stakeholder Analysis"
+    ],
+    "c": 1
+  },
+  {
+    "q": "In the context of a business case, a ____ refers to a study to assess the project's technical, operational, and economic feasibility?",
+    "a": [
+      "Cost Justification",
+      "Project Constraint",
+      "Feasibility Study",
+      "Project Sponsor"
+    ],
+    "c": 2
+  },
+  {
+    "q": "The purpose of conducting a ____ during project initiation is to determine if the project is viable and achievable?",
+    "a": [
+      "Alternatives Analysis",
+      "Feasibility Study",
+      "Project Business Case",
+      "Break-Even Point"
+    ],
+    "c": 1
+  },
+  {
+    "q": "What is the purpose of a feasibility study during project initiation?",
+    "a": [
+      "Not an input to initiation (it is created later)",
+      "Determine if project is viable and achievable",
+      "Responsible for creating the business case",
+      "Clear recommendation to approve, defer, or reject"
+    ],
+    "c": 1
+  },
+  {
+    "q": "What does the acronym SMART stand for when defining project objectives?",
+    "a": [
+      "Define how costs are estimated, budgeted, and controlled",
+      "Identify and categorize stakeholders and interests",
+      "Specific, Measurable, Achievable, Relevant, Time-bound",
+      "Outline how and when benefits are realized and measured"
+    ],
+    "c": 2
+  },
+  {
+    "q": "The document providing a high-level view of the project, including its objectives, major deliverables, and stakeholders, is the ____?",
+    "a": [
+      "Stakeholder Register",
+      "Regulatory Compliance",
+      "Business Case output",
+      "Project Scope Statement"
+    ],
+    "c": 3
+  },
+  {
+    "q": "An item that is NOT a typical input to the project initiation phase is the ____?",
+    "a": [
+      "Project schedule",
+      "Project Schedule",
+      "Project Sponsor",
+      "Project Charter"
+    ],
+    "c": 1
+  },
+  {
+    "q": "What does the Project Business Case provide during project initiation?",
+    "a": [
+      "Rationale and potential benefits",
+      "Define goals, objectives, and scope",
+      "Not included in a Project Charter",
+      "First phase of project management"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Which document formally authorizes a project to begin during initiation?",
+    "a": [
+      "Cost Justification",
+      "Project Sponsor",
+      "Project Charter",
+      "Cost Management Plan"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Which statement best describes Project Charter purpose?",
+    "a": [
+      "Limitation affecting success factors",
+      "Formally authorizes project to begin",
+      "Identify and define purpose and scope",
+      "Define goals, objectives, and scope"
+    ],
+    "c": 3
+  },
+  {
+    "q": "The primary purpose of the ____ section in a business case is to document any assumptions made and constraints that may impact the project?",
+    "a": [
+      "Project Scope Statement use",
+      "Detailed project schedule",
+      "Approved Project Charter",
+      "Assumptions and Constraints"
+    ],
+    "c": 3
+  },
+  {
+    "q": "The primary goal of the ____ section in a business case is to identify and assess the impact of project stakeholders?",
+    "a": [
+      "Stakeholder Register",
+      "Cost Management Plan",
+      "Project Charter purpose",
+      "Stakeholder Analysis"
+    ],
+    "c": 3
+  },
+  {
+    "q": "A ____ is a meeting to formally announce the project and its objectives, held at the beginning of initiation?",
+    "a": [
+      "Cost-Benefit Analysis",
+      "Timeframe and Milestones",
+      "Project Kickoff Meeting",
+      "Initiation phase objective"
+    ],
+    "c": 2
+  },
+  {
+    "q": "The main goal of the ____ section in a business case is to demonstrate how the project aligns with the organization's strategic goals and objectives?",
+    "a": [
+      "Strategic Alignment",
+      "Project Constraint",
+      "Feasibility Study",
+      "Regulatory Compliance"
+    ],
+    "c": 0
+  },
+  {
+    "q": "A factor that is NOT a typical constraint considered during project initiation is ____?",
+    "a": [
+      "ROI",
+      "Color",
+      "Initiation",
+      "SMART"
+    ],
+    "c": 1
+  },
+  {
+    "q": "What does a SWOT Analysis assess?",
+    "a": [
+      "Not a typical project constraint (unlike time, cost, scope)",
+      "Strategic analysis of strengths, weaknesses, opportunities, and threats",
+      "Formally announce project and objectives at initiation start",
+      "Explore and evaluate different options to achieve objectives"
+    ],
+    "c": 1
+  },
+  {
+    "q": "The primary output of the Initiation phase in project management is an ____?",
+    "a": [
+      "Project Charter purpose",
+      "Assumptions and Constraints",
+      "Approved Project Charter",
+      "Initiation phase objective"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Which phase is the first phase of project management?",
+    "a": [
+      "Closing",
+      "Initiation",
+      "Planning",
+      "Execution"
+    ],
+    "c": 1
+  },
+  {
+    "q": "In a business case, a ____ is used to assess the financial viability of the project by comparing costs and benefits?",
+    "a": [
+      "Cost-Benefit Analysis",
+      "Approved Project Charter",
+      "Cost Management Plan",
+      "Timeframe and Milestones"
+    ],
+    "c": 0
+  },
+  {
+    "q": "The primary focus of the ____ in a business case is to outline how and when project benefits will be realized and measured?",
+    "a": [
+      "Assumptions and Constraints",
+      "Recommendation section",
+      "Detailed project schedule",
+      "Benefits Realization Plan"
+    ],
+    "c": 3
+  },
+  {
+    "q": "A project is typically initiated by the Project Sponsor or Initiator, who ____?",
+    "a": [
+      "Creates the Project Charter",
+      "Primary output of initiation phase",
+      "Approves the Project Charter",
+      "First phase of project management"
+    ],
+    "c": 0
+  },
+  {
+    "q": "The primary purpose of a ____ in project management is to provide a justification for the project, including its expected benefits and costs?",
+    "a": [
+      "Feasibility Study",
+      "Initiation",
+      "Business Case",
+      "SWOT Analysis"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Which statement best describes Project Manager role in initiation?",
+    "a": [
+      "Identify and assess stakeholder impact",
+      "Provide project timeline and key milestones",
+      "Align project with organizational goals",
+      "Limitation affecting success factors"
+    ],
+    "c": 2
+  },
+  {
+    "q": "In a business case, the ____ is the point at which project benefits equal project costs?",
+    "a": [
+      "Project Charter",
+      "Project schedule",
+      "Break-Even Point",
+      "Risk Assessment"
+    ],
+    "c": 2
+  },
+  {
+    "q": "A section that is NOT typically part of a business case document is the detailed ____?",
+    "a": [
+      "Project schedule",
+      "Business Case output",
+      "Break-Even Point",
+      "Cost-Benefit Analysis"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Which statement best describes Project Scope Statement use?",
+    "a": [
+      "Outline how and when benefits are realized and measured",
+      "Demonstrate project alignment with organizational goals",
+      "Define boundaries, deliverables, and acceptance criteria",
+      "Assess technical, operational, and economic feasibility"
+    ],
+    "c": 2
+  },
+  {
+    "q": "The entity typically ____ for a project is the Project Sponsor?",
+    "a": [
+      "Not a typical section of a business case",
+      "Responsible for creating the business case",
+      "Provide project timeline and key milestones",
+      "Identify and assess stakeholder impact"
+    ],
+    "c": 1
+  },
+  {
+    "q": "What is the goal of Regulatory Compliance in a business case?",
+    "a": [
+      "Document assumptions and constraints impacting the project",
+      "Assess technical, operational, and economic feasibility",
+      "Outline compliance with laws, regulations, and standards",
+      "Identify potential risks and propose mitigation strategies"
+    ],
+    "c": 2
+  },
+  {
+    "q": "The primary objective of the Recommendation section in a business case is to provide a ____ the project?",
+    "a": [
+      "Assess technical, operational, and economic feasibility",
+      "Anyone affected by or interested in the project",
+      "Not an input to initiation (it is created later)",
+      "Clear recommendation to approve, defer, or reject"
+    ],
+    "c": 3
+  },
+  {
+    "q": "During project initiation, the authority to approve the Project Charter belongs to the ____?",
+    "a": [
+      "Project Sponsor or Initiator",
+      "Project Charter purpose",
+      "Assumptions and Constraints",
+      "Initiation phase objective"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Who are considered project stakeholders?",
+    "a": [
+      "Comprehensive justification for project and approval",
+      "Anyone affected by or interested in the project",
+      "Point where project benefits equal project costs",
+      "Clear recommendation to approve, defer, or reject"
+    ],
+    "c": 1
+  },
+  {
+    "q": "In the context of a business case, ROI stands for ____?",
+    "a": [
+      "Approves the Project Charter",
+      "Identify and define purpose and scope",
+      "Return on Investment",
+      "Creates the Project Charter"
+    ],
+    "c": 2
+  },
+  {
+    "q": "In the context of a business case, a ____ is a strategic analysis that assesses an organization's strengths, weaknesses, opportunities, and threats?",
+    "a": [
+      "Initiation",
+      "Business Case",
+      "SWOT Analysis",
+      "Risk Assessment"
+    ],
+    "c": 2
+  },
+  {
+    "q": "What does ROI stand for in a business case?",
+    "a": [
+      "Rationale and potential benefits",
+      "Define goals, objectives, and scope",
+      "First phase of project management",
+      "Return on Investment"
+    ],
+    "c": 3
+  },
+  {
+    "q": "The significance of the ____ section in a business case is to provide a clear rationale for the project's costs in relation to its benefits?",
+    "a": [
+      "Stakeholder Analysis",
+      "Cost Justification",
+      "Alternatives Analysis",
+      "Project Business Case"
+    ],
+    "c": 1
+  },
+  {
+    "q": "The primary purpose of a ____ in project initiation is to provide a rationale for the project and its potential benefits?",
+    "a": [
+      "Timeframe and Milestones",
+      "Project Scope Statement",
+      "Cost Management Plan",
+      "Project Business Case"
+    ],
+    "c": 3
+  },
+  {
+    "q": "An element that is typically NOT found in a Project Charter is a ____?",
+    "a": [
+      "Detailed project schedule",
+      "Project Sponsor or Initiator",
+      "Alternatives Analysis",
+      "Assumptions and Constraints"
+    ],
+    "c": 0
+  },
+  {
+    "q": "The purpose of a ____ in a business case is to identify potential risks that may affect the project's success and propose mitigation strategies?",
+    "a": [
+      "Risk Assessment",
+      "Project Schedule",
+      "Break-Even Point",
+      "Project schedule"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Which statement best describes Initiation phase objective?",
+    "a": [
+      "Identify and define purpose and scope",
+      "Limitation affecting success factors",
+      "Identify and assess stakeholder impact",
+      "Define goals, objectives, and scope"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Plagiarism resulting from an author intentionally misleading readers or disguising the true origin of their source is ____?",
+    "a": [
+      "Catalogs and Indexes",
+      "Working bibliography",
+      "Source-based plagiarism",
+      "Verbatim plagiarism"
+    ],
+    "c": 2
+  },
+  {
+    "q": "An organized and curated collection of academic literature containing journals, books, and research reports is a ____?",
+    "a": [
+      "Print collection",
+      "Library sources",
+      "Multimedia resources",
+      "Library database"
+    ],
+    "c": 3
+  },
+  {
+    "q": "Videos, tutorials, recorded lectures, and research datasets that support practical learning are classified as ____?",
+    "a": [
+      "Multimedia resources",
+      "Goal of academic paper",
+      "Working bibliography",
+      "Annotated bibliography"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Which statement best describes Reliable?",
+    "a": [
+      "Books, theses, and foundational literature",
+      "Consistent, accurate results under varying conditions",
+      "Systematic distortion affecting study validity",
+      "Structured tools supporting knowledge discovery"
+    ],
+    "c": 1
+  },
+  {
+    "q": "According to the study notes, is the following statement correct: Including URLs or Digital Object Identifiers (DOI) is a mandatory part of citation details for online resources?",
+    "a": [
+      "Not stated",
+      "True",
+      "False",
+      "Both true and false"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Using someone else’s intellectual work or research ideas without providing proper credit or attribution is defined as ____?",
+    "a": [
+      "Citation style",
+      "Source evaluation",
+      "Relevance",
+      "Plagiarism"
+    ],
+    "c": 3
+  },
+  {
+    "q": "What type of plagiarism involves stitching together material from multiple external sources?",
+    "a": [
+      "Source evaluation",
+      "Precise keyword filters",
+      "Mosaic plagiarism",
+      "Goal of academic paper"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Unintentional paraphrasing errors, missing quotation marks, or forgotten end-citations fall under ____?",
+    "a": [
+      "Mosaic plagiarism",
+      "Catalogs and Indexes",
+      "Catalogs and indexes",
+      "Accidental plagiarism"
+    ],
+    "c": 3
+  },
+  {
+    "q": "A reference management tool widely used in IT research that is free, flexible, and ideal for team collaboration is ____?",
+    "a": [
+      "Working bibliography",
+      "Zotero",
+      "Self-plagiarism",
+      "Ghostwriting"
+    ],
+    "c": 1
+  },
+  {
+    "q": "According to the study notes, is the following statement correct: One main purpose of a bibliography is to build credibility by demonstrating that your paper is grounded in thorough research?",
+    "a": [
+      "False",
+      "Not stated",
+      "Both true and false",
+      "True"
+    ],
+    "c": 3
+  },
+  {
+    "q": "Systematic distortions that prejudice research validity and lead to unfair or misleading conclusions are defined as ____?",
+    "a": [
+      "Citation style",
+      "Plagiarism",
+      "Bias",
+      "Endnote"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Copying an author's core ideas, rephrasing sentences, and claiming ownership without citation is ____?",
+    "a": [
+      "Paraphrasing plagiarism",
+      "Catalogs and Indexes",
+      "Source-based plagiarism",
+      "Accidental plagiarism"
+    ],
+    "c": 0
+  },
+  {
+    "q": "How closely an IT study or system solution addresses real-world practical problems and user needs is ____?",
+    "a": [
+      "Relevance",
+      "Plagiarism",
+      "Zotero",
+      "Endnote"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Which free reference management tool is ideal for team collaboration?",
+    "a": [
+      "Endnote",
+      "Reliable",
+      "Zotero",
+      "Relevance"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Which statement best describes Source evaluation?",
+    "a": [
+      "Addressing real-world technology concerns",
+      "Using another's work without proper credit",
+      "Credibility + Relevance + Recency (TRUE)",
+      "Novel tech solutions preventing stagnation"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Books, journals, theses, and reference works providing foundational theories and historical perspectives belong to ____?",
+    "a": [
+      "Source evaluation",
+      "Print collection",
+      "Working bibliography",
+      "Library database"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Search environments that utilize precise keyword searching and advanced filters to effectively narrow research results are ____?",
+    "a": [
+      "Citation style",
+      "Newspaper indexes",
+      "Library databases",
+      "Mosaic plagiarism"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Which statement best describes Weaving multiple sources together?",
+    "a": [
+      "Citation style",
+      "Working bibliography",
+      "Mosaic plagiarism",
+      "Self-plagiarism"
+    ],
+    "c": 2
+  },
+  {
+    "q": "According to the study notes, is the following statement correct: The assertion that the degree and standards of plagiarism do not vary from discipline to discipline?",
+    "a": [
+      "False",
+      "Not stated",
+      "True",
+      "Both true and false"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Which statement best describes Goal of academic paper?",
+    "a": [
+      "Polished references list at paper end",
+      "Catalogs and indexes",
+      "Stealing entire research work",
+      "Present original ideas (TRUE)"
+    ],
+    "c": 3
+  },
+  {
+    "q": "According to the study notes, is the following statement correct: The proliferation of low-quality or predatory journals makes verifying literature credibility challenging for researchers?",
+    "a": [
+      "False",
+      "Both true and false",
+      "Not stated",
+      "True"
+    ],
+    "c": 3
+  },
+  {
+    "q": "According to the study notes, is the following statement correct: Including a detailed bibliography helps interested readers verify and locate the exact cited materials?",
+    "a": [
+      "False",
+      "Both true and false",
+      "True",
+      "Not stated"
+    ],
+    "c": 2
+  },
+  {
+    "q": "A bibliography style that appends a brief evaluative summary note to each citation is an ____?",
+    "a": [
+      "Annotated bibliography",
+      "Precise keyword filters",
+      "Goal of academic paper",
+      "Mosaic plagiarism"
+    ],
+    "c": 0
+  },
+  {
+    "q": "The polished, final reference list included at the conclusion of a completed research paper is the ____?",
+    "a": [
+      "Goal of academic paper",
+      "Final bibliography",
+      "Working bibliography",
+      "Multimedia resources"
+    ],
+    "c": 1
+  },
+  {
+    "q": "JSTOR, PubMed, and Scopus are popular academic databases, whereas the option that is a reference manager is ____?",
+    "a": [
+      "Zotero",
+      "Mosaic plagiarism",
+      "Endnote",
+      "Innovation"
+    ],
+    "c": 2
+  },
+  {
+    "q": "The critical step determining how sources are formatted and presented across working and final bibliographies is the ____?",
+    "a": [
+      "Newspaper indexes",
+      "Self-plagiarism",
+      "Citation style",
+      "Working bibliography"
+    ],
+    "c": 2
+  },
+  {
+    "q": "A preliminary list compiled step-by-step during investigation to keep reliable source records is a ____?",
+    "a": [
+      "Catalogs and indexes",
+      "Working bibliography",
+      "Catalogs and Indexes",
+      "Mosaic plagiarism"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Hiring or utilizing another individual to secretly write and complete a research assignment is ____?",
+    "a": [
+      "Ghostwriting",
+      "Citation style",
+      "Verbatim plagiarism",
+      "Catalogs and Indexes"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Platforms that primarily contain scholarly articles, books, and domain-specific academic resources are ____?",
+    "a": [
+      "Self-plagiarism",
+      "Catalogs and Indexes",
+      "Ghostwriting",
+      "Library databases"
+    ],
+    "c": 3
+  },
+  {
+    "q": "What determines how sources are formatted and presented in bibliographies?",
+    "a": [
+      "Multimedia resources",
+      "Citation style",
+      "Source evaluation",
+      "Mosaic plagiarism"
+    ],
+    "c": 1
+  },
+  {
+    "q": "In technology research, creating novel solutions, system architectures, or methods to prevent stagnation is ____?",
+    "a": [
+      "Plagiarism",
+      "Zotero",
+      "Innovation",
+      "Relevance"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Providing current, real-world coverage of emerging technology issues, trends, and events is best supported by ____?",
+    "a": [
+      "Self-plagiarism",
+      "Library databases",
+      "Mosaic plagiarism",
+      "Newspaper indexes"
+    ],
+    "c": 3
+  },
+  {
+    "q": "The structured tools and collections that support finding, evaluating, and applying knowledge are known as ____?",
+    "a": [
+      "Mosaic plagiarism",
+      "Print collection",
+      "Library sources",
+      "Source evaluation"
+    ],
+    "c": 2
+  },
+  {
+    "q": "What is the preliminary, step-by-step source list maintained during investigation called?",
+    "a": [
+      "Working bibliography",
+      "Source evaluation",
+      "Annotated bibliography",
+      "Multimedia resources"
+    ],
+    "c": 0
+  },
+  {
+    "q": "In IT research, organizational tools that help researchers systematically locate, classify, and retrieve information are ____?",
+    "a": [
+      "Accidental plagiarism",
+      "Catalogs and indexes",
+      "Self-plagiarism",
+      "Working bibliography"
+    ],
+    "c": 1
+  },
+  {
+    "q": "According to the study notes, is the following statement correct: When accessing research literature, utilizing subject-specific databases yields deeper and more relevant results?",
+    "a": [
+      "False",
+      "Both true and false",
+      "Not stated",
+      "True"
+    ],
+    "c": 3
+  },
+  {
+    "q": "Which statement best describes Direct word-for-word copying?",
+    "a": [
+      "Library databases",
+      "Verbatim plagiarism",
+      "Catalogs and Indexes",
+      "Accidental plagiarism"
+    ],
+    "c": 1
+  },
+  {
+    "q": "According to the study notes, is the following statement correct: Pruning irrelevant sources ensures every listed reference directly supports your research objectives?",
+    "a": [
+      "True",
+      "Not stated",
+      "False",
+      "Both true and false"
+    ],
+    "c": 0
+  },
+  {
+    "q": "According to the study notes, is the following statement correct: In academic research classification, news publications are considered secondary sources?",
+    "a": [
+      "Not stated",
+      "True",
+      "False",
+      "Both true and false"
+    ],
+    "c": 1
+  },
+  {
+    "q": "According to the study notes, is the following statement correct: Login credentials are required to protect sensitive data and licensed proprietary content, making the strict restriction FALSE when applied universally to open software?",
+    "a": [
+      "True",
+      "Both true and false",
+      "Not stated",
+      "False"
+    ],
+    "c": 3
+  },
+  {
+    "q": "According to the study notes, is the following statement correct: The statement that everyone can publish content online via search engines with peer verification?",
+    "a": [
+      "Not stated",
+      "Both true and false",
+      "True",
+      "False"
+    ],
+    "c": 3
+  },
+  {
+    "q": "According to the study notes, is the following statement correct: General web search engines are freely accessible but may not consistently lead to verified, high-quality academic sources?",
+    "a": [
+      "True",
+      "Not stated",
+      "False",
+      "Both true and false"
+    ],
+    "c": 0
+  },
+  {
+    "q": "According to the study notes, is the following statement correct: The claim that source-based plagiarism solely involves changing semantics or translating text is FALSE (as it also covers false citations)?",
+    "a": [
+      "False",
+      "Both true and false",
+      "Not stated",
+      "True"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Attempting to claim new academic credit for a paper or dataset you previously submitted is ____?",
+    "a": [
+      "Self-plagiarism",
+      "Library databases",
+      "Ghostwriting",
+      "Mosaic plagiarism"
+    ],
+    "c": 0
+  },
+  {
+    "q": "What is a Library database?",
+    "a": [
+      "Systematic distortion affecting study validity",
+      "Structured tools supporting knowledge discovery",
+      "Novel tech solutions preventing stagnation",
+      "Curated digital academic literature repository"
+    ],
+    "c": 3
+  },
+  {
+    "q": "Which statement best describes Global/Complete plagiarism?",
+    "a": [
+      "Present original ideas (TRUE)",
+      "Polished references list at paper end",
+      "Stealing entire research work",
+      "Videos, audio lectures, and datasets"
+    ],
+    "c": 2
+  },
+  {
+    "q": "An alphabetical list of news articles classified by subject, names, notices, and advertising found in publications is a ____ tool (or Newspaper Index)?",
+    "a": [
+      "Mosaic plagiarism",
+      "Catalogs and Indexes",
+      "Accidental plagiarism",
+      "Working bibliography"
+    ],
+    "c": 1
+  },
+  {
+    "q": "According to the study notes, is the following statement correct: Content hosted within academic library databases is consistently updated with new publications?",
+    "a": [
+      "False",
+      "True",
+      "Not stated",
+      "Both true and false"
+    ],
+    "c": 1
+  },
+  {
+    "q": "According to the study notes, is the following statement correct: Using library databases is invaluable for researchers because they offer access to subscription-only peer-reviewed content?",
+    "a": [
+      "False",
+      "Both true and false",
+      "Not stated",
+      "True"
+    ],
+    "c": 3
+  },
+  {
+    "q": "Which option is a reference manager rather than a library database?",
+    "a": [
+      "Reliable",
+      "Zotero",
+      "Relevance",
+      "Endnote"
+    ],
+    "c": 3
+  },
+  {
+    "q": "Which statement best describes Monthly backup?",
+    "a": [
+      "Restores database to a specific past moment",
+      "Uses a key pair for encryption and decryption",
+      "Keyword used to define an output parameter",
+      "Appropriate frequency for non-critical data"
+    ],
+    "c": 3
+  },
+  {
+    "q": "The external storage device commonly used for personal backups is an ____?",
+    "a": [
+      "Incremental Backup",
+      "External Hard Drive",
+      "Auditing changes",
+      "Symmetric encryption"
+    ],
+    "c": 1
+  },
+  {
+    "q": "The backup type that stores only the changes made since the last full backup is an ____?",
+    "a": [
+      "Stored procedures",
+      "Query optimization",
+      "Symmetric encryption",
+      "Incremental Backup"
+    ],
+    "c": 3
+  },
+  {
+    "q": "A technique for obscuring data while preserving its usability is ____?",
+    "a": [
+      "Data encryption",
+      "Data masking",
+      "Database backup",
+      "Authentication"
+    ],
+    "c": 1
+  },
+  {
+    "q": "The primary purpose of ____ in database security is To validate the identity of users and systems?",
+    "a": [
+      "Cloud backup",
+      "Business rules",
+      "Authentication",
+      "Backup scheduling"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Regular ____ are important to recover data after a failure or loss?",
+    "a": [
+      "Auditing changes",
+      "Database backups",
+      "Query optimization",
+      "Isolated transaction"
+    ],
+    "c": 1
+  },
+  {
+    "q": "An ____ is that they cannot perform transactions?",
+    "a": [
+      "Incorrect statement about stored procedures",
+      "Appropriate frequency for non-critical data",
+      "Offers cost-effective and scalable storage",
+      "Restores database to a specific past moment"
+    ],
+    "c": 0
+  },
+  {
+    "q": "____ is essential for organizations to ensure that only authorized individuals’ access and manipulate data?",
+    "a": [
+      "Hybrid Storage",
+      "Database security",
+      "Concurrency control",
+      "SQL Injection"
+    ],
+    "c": 1
+  },
+  {
+    "q": "The type of audit trail that ____ is a Transaction audit trail?",
+    "a": [
+      "Essential feature for backup software",
+      "Combines on-site and off-site backups",
+      "Considered a database security control",
+      "Provides a record of database changes"
+    ],
+    "c": 3
+  },
+  {
+    "q": "____ in databases refers to Multiple transactions being executed simultaneously?",
+    "a": [
+      "Data backup",
+      "Cloud backup",
+      "Concurrency",
+      "Ransomware"
+    ],
+    "c": 2
+  },
+  {
+    "q": "An ____ is Human error in file deletion?",
+    "a": [
+      "Example of accidental data loss",
+      "Potential impact of insider threats",
+      "Ensures data integrity in databases",
+      "Can return multiple result sets"
+    ],
+    "c": 0
+  },
+  {
+    "q": "One benefit of indexing is ____?",
+    "a": [
+      "Asymmetric encryption",
+      "Human error in file deletion",
+      "Accessibility from anywhere",
+      "Faster data retrieval times"
+    ],
+    "c": 3
+  },
+  {
+    "q": "____ aims to Improve the execution speed of SQL queries?",
+    "a": [
+      "Database encryption",
+      "Incremental backup",
+      "Query optimization",
+      "TLS/SSL encryption"
+    ],
+    "c": 2
+  },
+  {
+    "q": "The ____ in a stored procedure is Out?",
+    "a": [
+      "Dividing tables into smaller, related tables",
+      "Obscures data while preserving usability",
+      "Backup storage physically located on-premises",
+      "Keyword used to define an output parameter"
+    ],
+    "c": 3
+  },
+  {
+    "q": "The SQL statement used to remove a stored procedure is ____?",
+    "a": [
+      "Stored procedures",
+      "Drop Procedure",
+      "Database backups",
+      "Database backup"
+    ],
+    "c": 1
+  },
+  {
+    "q": "A key database security control is ____?",
+    "a": [
+      "On-site Storage",
+      "Database backup",
+      "Data encryption",
+      "Normalization"
+    ],
+    "c": 2
+  },
+  {
+    "q": "A ____ is SQL Injection?",
+    "a": [
+      "Common threat to database security",
+      "Protects data from loss or corruption",
+      "Key advantage of cloud backup storage",
+      "Common device for personal backups"
+    ],
+    "c": 0
+  },
+  {
+    "q": "The type of malware that encrypts files and demands a ransom for decryption is ____?",
+    "a": [
+      "Data theft",
+      "SQL Injection",
+      "Data backup",
+      "Ransomware"
+    ],
+    "c": 3
+  },
+  {
+    "q": "The main purpose of ____ is to Ensure data integrity?",
+    "a": [
+      "External Hard Drive",
+      "Isolated transaction",
+      "Database encryption",
+      "Concurrency control"
+    ],
+    "c": 3
+  },
+  {
+    "q": "A key advantage of cloud storage for backups is ____?",
+    "a": [
+      "Faster data retrieval times",
+      "Human error in file deletion",
+      "Accessibility from anywhere",
+      "Multi-factor authentication"
+    ],
+    "c": 2
+  },
+  {
+    "q": "The type of encryption typically used for encrypting data at rest is ____?",
+    "a": [
+      "Symmetric encryption",
+      "Incremental Backup",
+      "Isolated transaction",
+      "TLS/SSL encryption"
+    ],
+    "c": 0
+  },
+  {
+    "q": "A common type of concurrency control is ____?",
+    "a": [
+      "None",
+      "Data backup",
+      "Locking",
+      "Latency"
+    ],
+    "c": 2
+  },
+  {
+    "q": "The primary purpose of ____ is to protect data from loss or corruption?",
+    "a": [
+      "Data masking",
+      "Business rules",
+      "Data backup",
+      "Monthly backup"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Normalization is primarily aimed at ____?",
+    "a": [
+      "Point-in-time recovery",
+      "TLS/SSL encryption",
+      "Reducing data redundancy",
+      "Accessibility from anywhere"
+    ],
+    "c": 2
+  },
+  {
+    "q": "The primary purpose of ____ in database security is to verify the identity of users?",
+    "a": [
+      "Stored procedures",
+      "Drop Procedure",
+      "Enhanced security",
+      "Authentication"
+    ],
+    "c": 3
+  },
+  {
+    "q": "The encryption method that uses a pair of keys, one for encryption and one for decryption, is ____?",
+    "a": [
+      "Enhanced security",
+      "Asymmetric encryption",
+      "Reducing data redundancy",
+      "Concurrency control"
+    ],
+    "c": 1
+  },
+  {
+    "q": "The storage option providing a combination of on-site and off-site backups is ____?",
+    "a": [
+      "Database backups",
+      "Ransomware",
+      "Hybrid Storage",
+      "Database security"
+    ],
+    "c": 2
+  },
+  {
+    "q": "A common method of authorization is ____?",
+    "a": [
+      "They cannot perform transactions",
+      "Role-based access control (RBAC)",
+      "Faster data retrieval times",
+      "Multi-factor authentication"
+    ],
+    "c": 1
+  },
+  {
+    "q": "The type of backup that only copies changes made since the last backup is an ____?",
+    "a": [
+      "Incremental backup",
+      "On-site Storage",
+      "Stored procedures",
+      "Concurrency control"
+    ],
+    "c": 0
+  },
+  {
+    "q": "The backup storage option physically located on the premises is ____?",
+    "a": [
+      "Database backup",
+      "Business rules",
+      "On-site Storage",
+      "Auditing changes"
+    ],
+    "c": 2
+  },
+  {
+    "q": "The type of malware designed to gain unauthorized access to a system while remaining hidden is a ____?",
+    "a": [
+      "Out",
+      "Latency",
+      "Trojan",
+      "Cloud backup"
+    ],
+    "c": 2
+  },
+  {
+    "q": "The technique used to ensure that transactions do not interfere with each other is ____?",
+    "a": [
+      "Throughput",
+      "Concurrency",
+      "Latency",
+      "Locking"
+    ],
+    "c": 3
+  },
+  {
+    "q": "A true statement about stored procedures is that they ____?",
+    "a": [
+      "Example of accidental data loss",
+      "A type of concurrency control",
+      "Can return multiple result sets",
+      "Potential impact of insider threats"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Normalization typically involves ____?",
+    "a": [
+      "Dividing tables into smaller, related tables",
+      "Validates the identity of users and systems",
+      "Backup storage physically located on-premises",
+      "Verifies user identity in database security"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Triggers are typically used to enforce ____?",
+    "a": [
+      "Drop Procedure",
+      "Monthly backup",
+      "Business rules",
+      "Enhanced security"
+    ],
+    "c": 2
+  },
+  {
+    "q": "A ____ is Data theft?",
+    "a": [
+      "Protects data transmitted over networks",
+      "Common threat to database security",
+      "Ensures data integrity in databases",
+      "Potential impact of insider threats"
+    ],
+    "c": 3
+  },
+  {
+    "q": "A ____ is Multi-factor authentication?",
+    "a": [
+      "Method commonly used for strong authentication",
+      "Copies only changes made since the last backup",
+      "Number of transactions processed per unit of time",
+      "Dividing tables into smaller, related tables"
+    ],
+    "c": 0
+  },
+  {
+    "q": "The main purpose of ____ is To ensure that data can be restored in case of loss or corruption?",
+    "a": [
+      "Normalization",
+      "Stored procedures",
+      "Database backup",
+      "Authentication"
+    ],
+    "c": 2
+  },
+  {
+    "q": "The role of a ____ is To maintain security?",
+    "a": [
+      "Transaction log",
+      "Data encryption",
+      "Business rules",
+      "SQL Injection"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Which statement best describes Database encryption?",
+    "a": [
+      "Operates independently of other transactions",
+      "Backup storage physically located on-premises",
+      "Makes data readable only to authorized users",
+      "Appropriate frequency for non-critical data"
+    ],
+    "c": 2
+  },
+  {
+    "q": "According to the key, a non-benefit of stored procedures is ____?",
+    "a": [
+      "On-site Storage",
+      "Enhanced security",
+      "Database security",
+      "Transaction log"
+    ],
+    "c": 1
+  },
+  {
+    "q": "The type of lock that can be released at any time during a transaction is ____?",
+    "a": [
+      "Concurrency",
+      "Out",
+      "Latency",
+      "None"
+    ],
+    "c": 3
+  },
+  {
+    "q": "Latency is best defined as the ____?",
+    "a": [
+      "Dividing tables into smaller, related tables",
+      "Multiple transactions executed simultaneously",
+      "Validates the identity of users and systems",
+      "Time delay between a request and its response"
+    ],
+    "c": 3
+  },
+  {
+    "q": "A common use case for triggers is ____?",
+    "a": [
+      "Backup scheduling",
+      "Auditing changes",
+      "Enhanced security",
+      "TLS/SSL encryption"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Throughput in database performance refers to the ____?",
+    "a": [
+      "Time delay between a request and its response",
+      "Ensures data restoration after loss or corruption",
+      "Number of transactions processed per unit of time",
+      "Ensures only authorized access and manipulation"
+    ],
+    "c": 2
+  },
+  {
+    "q": "For a transaction to be isolated means that it ____?",
+    "a": [
+      "Makes data readable only to authorized users",
+      "Operates independently of other transactions",
+      "Restores database to a specific past moment",
+      "Incorrect statement about stored procedures"
+    ],
+    "c": 1
+  },
+  {
+    "q": "TLS/SSL encryption ____?",
+    "a": [
+      "Appropriate frequency for non-critical data",
+      "Aims to improve SQL query execution speed",
+      "Standard method for encrypting data at rest",
+      "Protects data transmitted over networks"
+    ],
+    "c": 3
+  },
+  {
+    "q": "A key benefit of using ____ services is Cost-effective and scalable storage?",
+    "a": [
+      "Database backup",
+      "SQL Injection",
+      "Cloud backup",
+      "Transaction log"
+    ],
+    "c": 2
+  },
+  {
+    "q": "An ____ to offer is Backup scheduling?",
+    "a": [
+      "Ensures data integrity in databases",
+      "Essential feature for backup software",
+      "Protects data transmitted over networks",
+      "Considered a database security control"
+    ],
+    "c": 1
+  },
+  {
+    "q": "The procedure used to restore a database to a specific point in time is ____?",
+    "a": [
+      "Incremental backup",
+      "Point-in-time recovery",
+      "Accessibility from anywhere",
+      "Reducing data redundancy"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Which is an example of a network SPOF?",
+    "a": [
+      "A Business Continuity Team",
+      "A single router connecting the entire network",
+      "A stakeholder map",
+      "Regular drills and simulations"
+    ],
+    "c": 1
+  },
+  {
+    "q": "What is the main purpose of a policy development framework?",
+    "a": [
+      "Increasing employee salaries",
+      "Identifying SPOFs only",
+      "Providing a structured approach to creating and approving policies",
+      "Creating backup sites"
+    ],
+    "c": 2
+  },
+  {
+    "q": "What does downtime refer to in business continuity?",
+    "a": [
+      "A period of employee training",
+      "A policy approval process",
+      "A stakeholder map",
+      "A period when systems are unavailable or not working"
+    ],
+    "c": 3
+  },
+  {
+    "q": "Which BCP phase identifies potential threats and vulnerabilities?",
+    "a": [
+      "Risk assessment phase",
+      "Strategy development phase",
+      "Training phase",
+      "Maintenance and review"
+    ],
+    "c": 0
+  },
+  {
+    "q": "What is a Cold Site?",
+    "a": [
+      "A site with all equipment ready",
+      "A site with real-time data",
+      "A backup location with no equipment",
+      "A site used only for training"
+    ],
+    "c": 2
+  },
+  {
+    "q": "What is the main objective of stakeholder analysis in BCM?",
+    "a": [
+      "Identifying people and groups affected by disruptions",
+      "Removing all external factors",
+      "Installing backup generators",
+      "Writing employee salaries"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Which phase ensures employees know what to do during disruptions?",
+    "a": [
+      "Business Impact Analysis",
+      "Training phase",
+      "Strategy development phase",
+      "Risk assessment phase"
+    ],
+    "c": 1
+  },
+  {
+    "q": "What is the purpose of a BCP flow diagram?",
+    "a": [
+      "Removing backup systems",
+      "Replacing stakeholders",
+      "Increasing employee salaries",
+      "Visualizing continuity processes step-by-step"
+    ],
+    "c": 3
+  },
+  {
+    "q": "What does leadership and commitment in BCM mean?",
+    "a": [
+      "Removing recovery procedures",
+      "Senior management actively supporting and driving continuity initiatives",
+      "Customers approving policies",
+      "Employees working without a plan"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Which is an internal factor in business continuity planning?",
+    "a": [
+      "External environment",
+      "Customers and suppliers",
+      "Employee skills and company culture",
+      "Cyberattacks and natural disasters"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Which recovery site provides the fastest recovery time?",
+    "a": [
+      "Stakeholder Site",
+      "Cold Site",
+      "Hot Site",
+      "Warm Site"
+    ],
+    "c": 2
+  },
+  {
+    "q": "What is the final phase in most BCP models?",
+    "a": [
+      "Stakeholder analysis",
+      "Plan maintenance and improvement",
+      "Strategy development",
+      "Risk assessment"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Which is NOT a typical objective of a BCP?",
+    "a": [
+      "Increasing office space",
+      "Preparing for disruptions",
+      "Protecting critical functions",
+      "Ensuring business operations continue"
+    ],
+    "c": 0
+  },
+  {
+    "q": "What is an important step after detecting a disaster?",
+    "a": [
+      "Stop all testing",
+      "Activate the appropriate recovery procedures",
+      "Increase employee salaries",
+      "Create a stakeholder map"
+    ],
+    "c": 1
+  },
+  {
+    "q": "What is the primary objective of a BCP?",
+    "a": [
+      "Eliminating all external factors",
+      "Increasing employee salaries",
+      "Ensuring business operations continue during disruption",
+      "Increasing office space"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Which group is primarily responsible for executing the BCP?",
+    "a": [
+      "Business Continuity Team",
+      "External interested parties",
+      "Customers",
+      "Suppliers"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Which is an external factor affecting business continuity?",
+    "a": [
+      "Training employees",
+      "Cyberattacks and natural disasters",
+      "Policy approval",
+      "Employee skills and company culture"
+    ],
+    "c": 1
+  },
+  {
+    "q": "What is most important when documenting SPOF avoidance techniques?",
+    "a": [
+      "Stakeholder interest only",
+      "Employee salaries",
+      "Backup paths and redundancy design",
+      "Office space"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Why is continuous review important in BCP?",
+    "a": [
+      "To remove all policies",
+      "To ensure the plan remains updated and effective",
+      "To increase employee salaries",
+      "To eliminate training"
+    ],
+    "c": 1
+  },
+  {
+    "q": "What does a stakeholder map visualize?",
+    "a": [
+      "Servers based on age",
+      "Stakeholders based on influence and interest",
+      "Policies based on cost",
+      "Employees based on salary"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Which are key steps in policy development?",
+    "a": [
+      "Risk assessment, downtime, and recovery",
+      "Backup generation, training, and downtime",
+      "Policy drafting, review, approval, and communication",
+      "Stakeholder mapping, salaries, and office expansion"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Which technique helps prevent SPOF in power systems?",
+    "a": [
+      "Using only one power source",
+      "Increasing office space",
+      "Removing backup paths",
+      "Installing UPS and backup generators"
+    ],
+    "c": 3
+  },
+  {
+    "q": "Which phase involves testing and reviewing the plan regularly?",
+    "a": [
+      "Maintenance and review",
+      "Strategy development",
+      "Risk assessment",
+      "Training phase"
+    ],
+    "c": 0
+  },
+  {
+    "q": "What is a key goal when visualizing the continuity process?",
+    "a": [
+      "Reducing employee skills",
+      "Making the plan easier to understand and follow",
+      "Increasing salaries",
+      "Removing stakeholders"
+    ],
+    "c": 1
+  },
+  {
+    "q": "What best supports rapid recovery in business continuity?",
+    "a": [
+      "Stakeholder mapping",
+      "Employee salary increases",
+      "Automated backups and recovery procedures",
+      "Increasing office space"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Which objective focuses on protecting critical business functions?",
+    "a": [
+      "Employee compensation",
+      "Operational continuity",
+      "Office expansion",
+      "Policy communication"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Which is an example of an external interested party?",
+    "a": [
+      "Customers and suppliers",
+      "Business Continuity Team",
+      "Company culture",
+      "Employee skills"
+    ],
+    "c": 0
+  },
+  {
+    "q": "How can an organization demonstrate commitment to minimizing downtime?",
+    "a": [
+      "Increase office space",
+      "Avoid recovery testing",
+      "Support and regularly test recovery procedures",
+      "Remove backup paths"
+    ],
+    "c": 2
+  },
+  {
+    "q": "What is the main objective of a Business Continuity Plan?",
+    "a": [
+      "Removing all risks",
+      "Increasing employee salaries",
+      "Increasing office space",
+      "Ensuring operations continue during disruptions"
+    ],
+    "c": 3
+  },
+  {
+    "q": "What is an important action immediately after a disruption in a Disaster Recovery Plan?",
+    "a": [
+      "Detect and assess the incident",
+      "Remove backup systems",
+      "Draft a new salary policy",
+      "Increase office space"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Which best demonstrates a holistic view of an organization?",
+    "a": [
+      "Only technology",
+      "People, processes, technology, and external environment",
+      "Only external suppliers",
+      "Only people and salaries"
+    ],
+    "c": 1
+  },
+  {
+    "q": "What does a proactive approach in BCP mean?",
+    "a": [
+      "Removing recovery procedures",
+      "Preparing and planning before disruptions occur",
+      "Ignoring risks",
+      "Waiting until a disruption occurs"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Who is identified as a key stakeholder in BCM planning?",
+    "a": [
+      "Supplier",
+      "Chief Executive Officer (CEO)",
+      "Business Continuity Team",
+      "Customer"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Which BCP component should be completed before implementation?",
+    "a": [
+      "Risk assessment",
+      "Maintenance and review",
+      "Strategy development",
+      "Training"
+    ],
+    "c": 2
+  },
+  {
+    "q": "How does a Warm Site differ from a Hot Site?",
+    "a": [
+      "It has some equipment but not real-time data",
+      "It always provides the fastest recovery",
+      "It has only external stakeholders",
+      "It has no equipment"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Which action shows proactive planning in BCP?",
+    "a": [
+      "Waiting for an incident",
+      "Removing backup paths",
+      "Conducting regular drills and simulations",
+      "Increasing office space"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Why is identifying SPOF important in system design?",
+    "a": [
+      "To remove training",
+      "To increase salaries",
+      "To improve system reliability and availability",
+      "To increase office space"
+    ],
+    "c": 2
+  },
+  {
+    "q": "What is the purpose of determining the BCM scope?",
+    "a": [
+      "Creating real-time data",
+      "Defining what parts of the organization are covered by BCM",
+      "Increasing office space",
+      "Replacing all employees"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Which phase focuses on assessing business continuity processes?",
+    "a": [
+      "Business Impact Analysis",
+      "Maintenance and review",
+      "Risk assessment",
+      "Training phase"
+    ],
+    "c": 0
+  },
+  {
+    "q": "What is the primary objective of a Business Continuity Plan (BCP)?",
+    "a": [
+      "Increasing office space",
+      "Eliminating all external factors",
+      "Increasing employee salaries",
+      "Ensuring business operations continue during disruption"
+    ],
+    "c": 3
+  },
+  {
+    "q": "What is a Single Point of Failure (SPOF)?",
+    "a": [
+      "A recovery procedure",
+      "A component whose failure stops the entire system",
+      "A stakeholder map",
+      "A backup location with no equipment"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Which phrase in the notes collectively describes helping the organization for crisis, risk assessment, and preparation for disruptions?",
+    "a": [
+      "Only preparation",
+      "All of the above",
+      "Only crisis response",
+      "Only risk assessment"
+    ],
+    "c": 1
+  },
+  {
+    "q": "What does an organizational structure with roles and responsibilities define?",
+    "a": [
+      "Only customer interests",
+      "Who does what and who has authority",
+      "Only backup locations",
+      "Only employee salaries"
+    ],
+    "c": 1
+  },
+  {
+    "q": "What does organization and context mainly describe in BCM?",
+    "a": [
+      "Only office equipment",
+      "Only customer complaints",
+      "Internal and external issues affecting the organization",
+      "Only employee salaries"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Which is NOT a BCP objective according to the study notes?",
+    "a": [
+      "Protecting critical business functions",
+      "Increasing employee salaries",
+      "Preparing for disruptions",
+      "Ensuring operations continue"
+    ],
+    "c": 1
+  },
+  {
+    "q": "What does commitment in organizational leadership mean?",
+    "a": [
+      "Providing resources and enforcing continuity plans",
+      "Removing training",
+      "Increasing office space",
+      "Avoiding policy communication"
+    ],
+    "c": 0
+  },
+  {
+    "q": "In which phase are strategies and procedures developed to address continuity needs?",
+    "a": [
+      "Training phase",
+      "Maintenance and review",
+      "Risk assessment phase",
+      "Strategy development phase"
+    ],
+    "c": 3
+  },
+  {
+    "q": "Which phase should come first in a BCP flow diagram?",
+    "a": [
+      "Risk assessment",
+      "Strategy development",
+      "Maintenance and review",
+      "Training"
+    ],
+    "c": 0
+  },
+  {
+    "q": "What best describes Business Continuity Planning?",
+    "a": [
+      "A salary management process",
+      "A system for removing all risks",
+      "A structured approach to ensure business operations continue during disruptions",
+      "A method for increasing office space"
+    ],
+    "c": 2
+  },
+  {
+    "q": "What is the main purpose of stakeholder analysis in BCM?",
+    "a": [
+      "Identifying people and groups affected by disruptions",
+      "Writing employee salaries",
+      "Removing all external factors",
+      "Installing backup generators"
+    ],
+    "c": 0
+  }
+]
