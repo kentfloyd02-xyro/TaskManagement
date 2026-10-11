@@ -189,9 +189,12 @@ exports.forgotPassword = async (req, res) => {
 
     // Expires in 30 minutes
     user.resetPasswordExpire = Date.now() + 30 * 60 * 1000;
-    await user.save({ validateBeforeSave: false });
+    const clientOrigin =
+      req.headers.origin ||
+      (req.headers.referer ? new URL(req.headers.referer).origin : null) ||
+      'https://task-management-plum-eta.vercel.app';
 
-    const resetUrl = `http://localhost:5173/reset-password/${resetToken}`;
+    const resetUrl = `${clientOrigin}/reset-password/${resetToken}`;
 
     const message = `Hello ${user.name},\n\nYou requested a password reset for your Student Planner account. Please open the link below to set a new password:\n\n${resetUrl}\n\nIf you did not make this request, you can safely ignore this email.\nThis link will expire in 30 minutes.`;
 
