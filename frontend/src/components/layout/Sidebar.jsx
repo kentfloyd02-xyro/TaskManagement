@@ -17,6 +17,7 @@ import {
   PlusCircle,
   Sparkles,
   ShieldCheck,
+  MessageSquare,
 } from 'lucide-react';
 
 const Sidebar = ({ onQuickAddClick }) => {
