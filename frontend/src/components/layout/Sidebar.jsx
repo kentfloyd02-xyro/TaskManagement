@@ -31,6 +31,7 @@ const Sidebar = ({ onQuickAddClick }) => {
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Task Board & Views', href: '/tasks', icon: CheckSquare },
+    { name: 'Study Hub & Chats', href: '/chats', icon: MessageSquare },
     { name: 'Subjects', href: '/subjects', icon: BookOpen },
     { name: 'Projects', href: '/projects', icon: FolderGit2 },
     { name: 'Exam Reviewer', href: '/exam', icon: BookOpen },

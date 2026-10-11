@@ -11,7 +11,42 @@ dotenv.config();
 // Connect to Database
 connectDB();
 
+const http = require('http');
+const { Server } = require('socket.io');
+
 const app = express();
+const server = http.createServer(app);
+
+// Socket.io initialization with CORS
+const io = new Server(server, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  },
+});
+
+app.set('io', io);
+
+// Socket.io connection logic
+io.on('connection', (socket) => {
+  socket.on('join_room', (roomId) => {
+    socket.join(roomId);
+  });
+
+  socket.on('leave_room', (roomId) => {
+    socket.leave(roomId);
+  });
+
+  socket.on('typing', ({ roomId, userName }) => {
+    socket.to(roomId).emit('user_typing', { roomId, userName });
+  });
+
+  socket.on('stop_typing', ({ roomId }) => {
+    socket.to(roomId).emit('user_stop_typing', { roomId });
+  });
+
+  socket.on('disconnect', () => {});
+});
 
 // Middleware
 app.use(cors());
@@ -34,6 +69,8 @@ app.use('/api/analytics', require('./routes/analyticsRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/reviewer', require('./routes/reviewerRoutes'));
 app.use('/api/chatbot', require('./routes/chatbotRoutes'));
+app.use('/api/friends', require('./routes/friendRoutes'));
+app.use('/api/chat', require('./routes/chatRoutes'));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -60,6 +97,7 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`[Student Planner Server] Running on http://localhost:${PORT}`);
+server.listen(PORT, () => {
+  console.log(`[Student Planner Server] Running with Socket.io on http://localhost:${PORT}`);
 });
+

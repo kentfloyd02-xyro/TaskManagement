@@ -62,6 +62,12 @@ const userSchema = new mongoose.Schema(
         default: () => new Date().toISOString().slice(0, 10),
       },
     },
+    friends: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
   },
   {
     timestamps: true,

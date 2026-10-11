@@ -15,6 +15,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import ExamReviewer from './pages/ExamReviewer';
 import AdminPanel from './pages/AdminPanel';
+import StudyHub from './pages/StudyHub';
 
 // Protected Route Guard
 const ProtectedRoute = ({ children }) => {
@@ -104,6 +105,7 @@ function App() {
               <Route path="/projects" element={<Projects />} />
               <Route path="/archive" element={<ArchiveVault />} />
               <Route path="/exam" element={<ExamReviewer />} />
+              <Route path="/chats" element={<StudyHub />} />
               <Route path="/admin" element={<AdminPanel />} />
               <Route path="/settings" element={<Settings />} />
             </Route>
