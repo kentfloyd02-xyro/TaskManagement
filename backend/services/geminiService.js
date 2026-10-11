@@ -301,13 +301,48 @@ CRITICAL RULES:
     throw new Error('Walang naibigay na file data o text content para ma-scan.');
   }
 
-  const response = await ai.models.generateContent({
-    model: modelName,
-    contents: parts,
-    config: {
-      temperature: 0.1,
-    },
-  });
+  // Model fallback list if Google has 503 temporary capacity spikes
+  const candidateModels = [
+    modelName,
+    'gemini-2.5-flash',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash',
+  ];
+
+  let response = null;
+  let lastError = null;
+
+  for (const targetModel of candidateModels) {
+    try {
+      response = await ai.models.generateContent({
+        model: targetModel,
+        contents: parts,
+        config: {
+          temperature: 0.1,
+        },
+      });
+      if (response && response.text) break;
+    } catch (err) {
+      lastError = err;
+      const is503OrRateLimit =
+        err.status === 503 ||
+        err.message?.includes('503') ||
+        err.message?.includes('high demand') ||
+        err.message?.includes('UNAVAILABLE');
+
+      if (is503OrRateLimit) {
+        console.warn(`Model ${targetModel} experiencing high demand (503). Retrying with backup model...`);
+        // Small delay before backup model
+        await new Promise((r) => setTimeout(r, 600));
+        continue;
+      }
+      throw err;
+    }
+  }
+
+  if (!response || !response.text) {
+    throw lastError || new Error('Hindi makakuha ng sagot mula sa AI server. Pakisubukan muli.');
+  }
 
   const responseText = response.text || '';
   const cleaned = responseText

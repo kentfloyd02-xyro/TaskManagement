@@ -12,10 +12,19 @@ import {
   Clock,
   MapPin,
   User,
+  Minus,
+  Maximize2,
 } from 'lucide-react';
 import api from '../../api/client';
 
-const ScheduleScanModal = ({ isOpen, onClose, onSuccess }) => {
+const ScheduleScanModal = ({
+  isOpen,
+  onClose,
+  onSuccess,
+  isMinimized,
+  setIsMinimized,
+  onNotifyIsland,
+}) => {
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState('');
   const [isDragging, setIsDragging] = useState(false);
@@ -52,7 +61,6 @@ const ScheduleScanModal = ({ isOpen, onClose, onSuccess }) => {
   };
 
   const compressImageIfNeeded = async (imageFile) => {
-    // Only compress if image is > 1MB
     if (!imageFile.type.startsWith('image/') || imageFile.size < 1024 * 1024) {
       return imageFile;
     }
@@ -63,7 +71,7 @@ const ScheduleScanModal = ({ isOpen, onClose, onSuccess }) => {
         const canvas = document.createElement('canvas');
         let width = img.width;
         let height = img.height;
-        const maxDim = 1600; // Optimal high resolution for OCR without payload bloat
+        const maxDim = 1600;
 
         if (width > maxDim || height > maxDim) {
           if (width > height) {
@@ -125,6 +133,13 @@ const ScheduleScanModal = ({ isOpen, onClose, onSuccess }) => {
     setScanning(true);
     setErrorMessage('');
 
+    // Trigger dynamic island scanning banner if minimized or to notify
+    onNotifyIsland?.({
+      type: 'scanning',
+      title: 'Sina-scan ang Schedule...',
+      subtitle: file.name,
+    });
+
     try {
       const formData = new FormData();
       formData.append('file', file);
@@ -135,8 +150,21 @@ const ScheduleScanModal = ({ isOpen, onClose, onSuccess }) => {
 
       if (res.data?.success && res.data?.subjects) {
         setExtractedSubjects(res.data.subjects);
+        // Automatically restore modal to allow user review if it was minimized
+        setIsMinimized?.(false);
+        onNotifyIsland?.({
+          type: 'success',
+          title: `Tapos na ang Scan!`,
+          subtitle: `Nahanap ang ${res.data.subjects.length} subjects sa iyong COR.`,
+        });
       } else {
-        setErrorMessage(res.data?.message || 'Hindi ma-scan ang schedule.');
+        const msg = res.data?.message || 'Hindi ma-scan ang schedule.';
+        setErrorMessage(msg);
+        onNotifyIsland?.({
+          type: 'error',
+          title: 'Error sa Pag-scan',
+          subtitle: msg,
+        });
       }
     } catch (err) {
       console.error(err);
@@ -144,6 +172,11 @@ const ScheduleScanModal = ({ isOpen, onClose, onSuccess }) => {
         err.response?.data?.message ||
         'Hindi ito school schedule o class timetable. Pakisiguradong Certificate of Registration (COR) o class schedule ang inyong nilapag.';
       setErrorMessage(msg);
+      onNotifyIsland?.({
+        type: 'error',
+        title: 'Hindi Matanggap ang File',
+        subtitle: msg,
+      });
     } finally {
       setScanning(false);
     }
@@ -173,11 +206,22 @@ const ScheduleScanModal = ({ isOpen, onClose, onSuccess }) => {
 
       if (res.data?.success) {
         onSuccess?.(res.data.subjectsCount, res.data.timetableCount);
+        onNotifyIsland?.({
+          type: 'success',
+          title: `Na-save ang ${res.data.subjectsCount} Subjects!`,
+          subtitle: 'Nai-sync na sa iyong Academic Courses at Timetable.',
+        });
         handleClose();
       }
     } catch (err) {
       console.error(err);
-      setErrorMessage(err.response?.data?.message || 'Nagka-problema sa pag-save ng subjects.');
+      const errText = err.response?.data?.message || 'Nagka-problema sa pag-save ng subjects.';
+      setErrorMessage(errText);
+      onNotifyIsland?.({
+        type: 'error',
+        title: 'Error sa Pag-save',
+        subtitle: errText,
+      });
     } finally {
       setSaving(false);
     }
@@ -188,13 +232,90 @@ const ScheduleScanModal = ({ isOpen, onClose, onSuccess }) => {
     setPreviewUrl('');
     setExtractedSubjects(null);
     setErrorMessage('');
+    setIsMinimized?.(false);
     onClose();
   };
 
+  // If MINIMIZED: Show floating interactive Island Pill in bottom-right
+  if (isMinimized) {
+    return (
+      <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-5 duration-300">
+        <div
+          onClick={() => setIsMinimized?.(false)}
+          className="flex items-center gap-3.5 px-4 py-3 bg-slate-900/90 dark:bg-black/90 hover:bg-slate-900 text-white rounded-2xl shadow-2xl border border-slate-700/80 backdrop-blur-xl cursor-pointer hover:scale-105 transition-all group"
+        >
+          <div className="relative">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/30">
+              {scanning ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : extractedSubjects ? (
+                <CheckCircle className="w-5 h-5 text-emerald-400" />
+              ) : errorMessage ? (
+                <AlertCircle className="w-5 h-5 text-rose-400" />
+              ) : (
+                <Sparkles className="w-5 h-5 text-amber-300" />
+              )}
+            </div>
+            {scanning && (
+              <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+              </span>
+            )}
+          </div>
+
+          <div className="pr-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-black tracking-wide">
+                {scanning
+                  ? 'Sina-scan ang Schedule...'
+                  : extractedSubjects
+                  ? `Ready to Review (${extractedSubjects.length})`
+                  : errorMessage
+                  ? 'May Error sa Scan'
+                  : 'Schedule Scanner'}
+              </span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-white/10 text-slate-300 font-bold uppercase">
+                Minimized
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-400 truncate max-w-[180px]">
+              {file?.name || 'I-click para i-maximize'}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-1 border-l border-white/10 pl-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsMinimized?.(false);
+              }}
+              className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+              title="Maximize"
+            >
+              <Maximize2 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleClose();
+              }}
+              className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-rose-400 transition-colors"
+              title="Close"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Normal EXPANDED Modal
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
-        {/* Header */}
+        {/* Header with Minimize & Close */}
         <div className="p-5 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/25">
@@ -209,12 +330,24 @@ const ScheduleScanModal = ({ isOpen, onClose, onSuccess }) => {
               </p>
             </div>
           </div>
-          <button
-            onClick={handleClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
+
+          <div className="flex items-center gap-1">
+            {/* MINIMIZE BUTTON */}
+            <button
+              onClick={() => setIsMinimized?.(true)}
+              className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              title="I-minimize habang naghihintay"
+            >
+              <Minus className="w-5 h-5" />
+            </button>
+            <button
+              onClick={handleClose}
+              className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              title="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Content Body */}
@@ -300,33 +433,48 @@ const ScheduleScanModal = ({ isOpen, onClose, onSuccess }) => {
                 )}
               </div>
 
-              {/* Action Button */}
-              <div className="flex justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleScanSchedule}
-                  disabled={!file || scanning}
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 disabled:opacity-40 flex items-center gap-2 cursor-pointer transition-all"
-                >
-                  {scanning ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Sina-scan ng AI ang Schedule...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4" />
-                      <span>Simulan ang Scan at Extract</span>
-                    </>
-                  )}
-                </button>
+              {/* Action Buttons */}
+              <div className="flex items-center justify-between pt-2">
+                {scanning ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsMinimized?.(true)}
+                    className="text-xs text-blue-600 dark:text-blue-400 font-bold hover:underline flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Minus className="w-4 h-4" />
+                    <span>I-minimize habang naghihintay</span>
+                  </button>
+                ) : (
+                  <div />
+                )}
+
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={handleClose}
+                    className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleScanSchedule}
+                    disabled={!file || scanning}
+                    className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 disabled:opacity-40 flex items-center gap-2 cursor-pointer transition-all"
+                  >
+                    {scanning ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Sina-scan ng AI ang Schedule...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4" />
+                        <span>Simulan ang Scan at Extract</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -452,32 +600,43 @@ const ScheduleScanModal = ({ isOpen, onClose, onSuccess }) => {
               </div>
 
               {/* Confirm Buttons */}
-              <div className="flex justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
-                  onClick={handleClose}
-                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                  onClick={() => setIsMinimized?.(true)}
+                  className="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 font-bold flex items-center gap-1 cursor-pointer"
                 >
-                  Cancel
+                  <Minus className="w-4 h-4" />
+                  <span>I-minimize</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={handleConfirmImport}
-                  disabled={saving || extractedSubjects.length === 0}
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-bold shadow-md shadow-emerald-500/20 disabled:opacity-40 flex items-center gap-2 cursor-pointer transition-all"
-                >
-                  {saving ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Sine-save ang mga Subjects...</span>
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="w-4 h-4" />
-                      <span>I-save ang {extractedSubjects.length} Subjects</span>
-                    </>
-                  )}
-                </button>
+
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={handleClose}
+                    className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleConfirmImport}
+                    disabled={saving || extractedSubjects.length === 0}
+                    className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-bold shadow-md shadow-emerald-500/20 disabled:opacity-40 flex items-center gap-2 cursor-pointer transition-all"
+                  >
+                    {saving ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Sine-save ang mga Subjects...</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="w-4 h-4" />
+                        <span>I-save ang {extractedSubjects.length} Subjects</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           )}

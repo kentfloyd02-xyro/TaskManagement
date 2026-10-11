@@ -187,9 +187,13 @@ exports.scanScheduleAndExtract = async (req, res) => {
     });
   } catch (err) {
     console.error('[Scan Schedule Error]', err);
+    let errorMsg = err.message || 'Nagka-problema sa pag-scan ng schedule.';
+    if (errorMsg.includes('503') || errorMsg.includes('high demand') || errorMsg.includes('UNAVAILABLE')) {
+      errorMsg = 'Kasalukuyang mataas ang server traffic ni Google AI (Spike in demand). Paki-click lang ulit ang scan.';
+    }
     res.status(500).json({
       success: false,
-      message: err.message || 'Nagka-problema sa pag-scan ng schedule.',
+      message: errorMsg,
     });
   }
 };
