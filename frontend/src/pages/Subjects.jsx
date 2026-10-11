@@ -13,16 +13,18 @@ import {
   Loader2,
   X,
 } from 'lucide-react';
-import ScheduleScanModal from '../components/subjects/ScheduleScanModal';
+import { useOutletContext } from 'react-router-dom';
+import { useGlobalTasks } from '../context/GlobalTaskContext';
 
 const Subjects = () => {
   const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [showScanModal, setShowScanModal] = useState(false);
-  const [isScanMinimized, setIsScanMinimized] = useState(false);
   const [successBanner, setSuccessBanner] = useState('');
-  const [islandNotification, setIslandNotification] = useState(null);
+  const outletContext = useOutletContext();
+
+  // Global schedule scanner task
+  const { scheduleTask, setScheduleTask } = useGlobalTasks();
 
   // Form states
   const [code, setCode] = useState('');
@@ -46,7 +48,7 @@ const Subjects = () => {
 
   useEffect(() => {
     fetchSubjects();
-  }, []);
+  }, [outletContext?.refreshTrigger]);
 
   const handleCreateSubject = async (e) => {
     e.preventDefault();
@@ -92,61 +94,8 @@ const Subjects = () => {
     '#06b6d4', // cyan
   ];
 
-  const handleNotifyIsland = (notif) => {
-    setIslandNotification(notif);
-    if (notif.type !== 'scanning') {
-      setTimeout(() => {
-        setIslandNotification((prev) => (prev?.title === notif.title ? null : prev));
-      }, 6000);
-    }
-  };
-
   return (
     <div className="space-y-6 animate-in fade-in duration-200 relative">
-      {/* Dynamic Island Floating Notification Pill (Top Center) */}
-      {islandNotification && (
-        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-top-6 duration-300">
-          <div
-            onClick={() => {
-              if (showScanModal && isScanMinimized) {
-                setIsScanMinimized(false);
-              }
-            }}
-            className={`flex items-center gap-3 px-4 py-2.5 rounded-full shadow-2xl backdrop-blur-xl border text-xs cursor-pointer transition-all hover:scale-105 ${
-              islandNotification.type === 'error'
-                ? 'bg-rose-950/90 border-rose-700/80 text-rose-100 shadow-rose-900/40'
-                : islandNotification.type === 'success'
-                ? 'bg-emerald-950/90 border-emerald-700/80 text-emerald-100 shadow-emerald-900/40'
-                : 'bg-slate-900/90 border-slate-700/80 text-slate-100 shadow-black/40'
-            }`}
-          >
-            <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0">
-              {islandNotification.type === 'scanning' ? (
-                <Loader2 className="w-4 h-4 animate-spin text-blue-400" />
-              ) : islandNotification.type === 'success' ? (
-                <CheckCircle className="w-4 h-4 text-emerald-400" />
-              ) : (
-                <AlertCircle className="w-4 h-4 text-rose-400" />
-              )}
-            </div>
-
-            <div className="truncate max-w-xs md:max-w-md">
-              <span className="font-extrabold mr-1">{islandNotification.title}</span>
-              <span className="opacity-80 text-[11px] truncate">{islandNotification.subtitle}</span>
-            </div>
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setIslandNotification(null);
-              }}
-              className="p-1 rounded-full hover:bg-white/10 text-white/60 hover:text-white transition-colors"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-      )}
       {/* Header and Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -160,7 +109,7 @@ const Subjects = () => {
 
         <div className="flex items-center gap-2.5">
           <button
-            onClick={() => setShowScanModal(true)}
+            onClick={() => setScheduleTask((prev) => ({ ...prev, isOpen: true, isMinimized: false }))}
             className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-sm font-bold shadow-md shadow-blue-500/20 active:scale-95 transition-all cursor-pointer"
             title="I-scan ang imahe o file ng iyong school schedule"
           >
@@ -196,7 +145,7 @@ const Subjects = () => {
 
       {/* Drag & Drop Hero Quick-Action Bar */}
       <div
-        onClick={() => setShowScanModal(true)}
+        onClick={() => setScheduleTask((prev) => ({ ...prev, isOpen: true, isMinimized: false }))}
         className="p-5 rounded-3xl border-2 border-dashed border-blue-200 dark:border-blue-900/60 bg-gradient-to-r from-blue-50/70 via-indigo-50/40 to-transparent dark:from-blue-950/20 dark:via-indigo-950/10 hover:border-blue-400 dark:hover:border-blue-600 transition-all cursor-pointer flex items-center justify-between gap-4 group"
       >
         <div className="flex items-center gap-3.5">
@@ -376,27 +325,6 @@ const Subjects = () => {
         </div>
       )}
 
-      {/* Schedule Auto-Scan Modal with Minimize & Dynamic Island support */}
-      <ScheduleScanModal
-        isOpen={showScanModal}
-        onClose={() => {
-          setShowScanModal(false);
-          setIsScanMinimized(false);
-        }}
-        isMinimized={isScanMinimized}
-        setIsMinimized={setIsScanMinimized}
-        onNotifyIsland={handleNotifyIsland}
-        onSuccess={(subCount, timetableCount) => {
-          fetchSubjects();
-          setSuccessBanner(
-            `🎉 Matagumpay na na-import ang ${subCount} subjects! ${
-              timetableCount > 0
-                ? `Nai-sync din ang ${timetableCount} classes sa iyong Timetable na may push reminders.`
-                : ''
-            }`
-          );
-        }}
-      />
     </div>
   );
 };

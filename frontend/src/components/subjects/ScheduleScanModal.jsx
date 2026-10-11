@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   UploadCloud,
   FileText,
@@ -13,44 +13,32 @@ import {
   MapPin,
   User,
   Minus,
-  Maximize2,
 } from 'lucide-react';
 import api from '../../api/client';
+import { useGlobalTasks } from '../../context/GlobalTaskContext';
 
-const ScheduleScanModal = ({
-  isOpen,
-  onClose,
-  onSuccess,
-  isMinimized,
-  setIsMinimized,
-  onNotifyIsland,
-}) => {
-  const [file, setFile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState('');
-  const [isDragging, setIsDragging] = useState(false);
-  const [scanning, setScanning] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+const ScheduleScanModal = ({ isOpen, onClose, onSuccess }) => {
+  const { scheduleTask, setScheduleTask, triggerIsland } = useGlobalTasks();
 
-  // Extracted subjects for review
-  const [extractedSubjects, setExtractedSubjects] = useState(null);
-  const [saveToTimetable, setSaveToTimetable] = useState(true);
+  const {
+    file,
+    previewUrl,
+    scanning,
+    saving,
+    errorMessage,
+    extractedSubjects,
+    saveToTimetable,
+    isMinimized,
+  } = scheduleTask;
 
-  if (!isOpen) return null;
+  if (!isOpen || isMinimized) return null;
 
   const handleDragOver = (e) => {
     e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e) => {
-    e.preventDefault();
-    setIsDragging(false);
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
-    setIsDragging(false);
     const droppedFile = e.dataTransfer.files?.[0];
     if (droppedFile) processSelectedFile(droppedFile);
   };
@@ -110,31 +98,45 @@ const ScheduleScanModal = ({
   };
 
   const processSelectedFile = async (selectedFile) => {
-    setErrorMessage('');
-    setExtractedSubjects(null);
-
     if (selectedFile.type.startsWith('image/')) {
       const url = URL.createObjectURL(selectedFile);
-      setPreviewUrl(url);
       const readyFile = await compressImageIfNeeded(selectedFile);
-      setFile(readyFile);
+      setScheduleTask((prev) => ({
+        ...prev,
+        file: readyFile,
+        previewUrl: url,
+        errorMessage: '',
+        extractedSubjects: null,
+      }));
     } else {
-      setPreviewUrl('');
-      setFile(selectedFile);
+      setScheduleTask((prev) => ({
+        ...prev,
+        file: selectedFile,
+        previewUrl: '',
+        errorMessage: '',
+        extractedSubjects: null,
+      }));
     }
   };
 
   const handleScanSchedule = async () => {
     if (!file) {
-      setErrorMessage('Pumili muna o mag-drag ng file/image ng school schedule.');
+      setScheduleTask((prev) => ({
+        ...prev,
+        errorMessage: 'Pumili muna o mag-drag ng file/image ng school schedule.',
+      }));
       return;
     }
 
-    setScanning(true);
-    setErrorMessage('');
+    setScheduleTask((prev) => ({
+      ...prev,
+      scanning: true,
+      errorMessage: '',
+    }));
 
-    // Trigger dynamic island scanning banner if minimized or to notify
-    onNotifyIsland?.({
+    triggerIsland({
+      id: 'schedule_scan',
+      target: 'schedule',
       type: 'scanning',
       title: 'Sina-scan ang Schedule...',
       subtitle: file.name,
@@ -149,18 +151,26 @@ const ScheduleScanModal = ({
       });
 
       if (res.data?.success && res.data?.subjects) {
-        setExtractedSubjects(res.data.subjects);
-        // Automatically restore modal to allow user review if it was minimized
-        setIsMinimized?.(false);
-        onNotifyIsland?.({
+        setScheduleTask((prev) => ({
+          ...prev,
+          scanning: false,
+          extractedSubjects: res.data.subjects,
+          isMinimized: false,
+        }));
+
+        triggerIsland({
+          id: 'schedule_scan_done',
+          target: 'schedule',
           type: 'success',
-          title: `Tapos na ang Scan!`,
+          title: 'Tapos na ang Scan!',
           subtitle: `Nahanap ang ${res.data.subjects.length} subjects sa iyong COR.`,
         });
       } else {
         const msg = res.data?.message || 'Hindi ma-scan ang schedule.';
-        setErrorMessage(msg);
-        onNotifyIsland?.({
+        setScheduleTask((prev) => ({ ...prev, scanning: false, errorMessage: msg }));
+        triggerIsland({
+          id: 'schedule_scan_err',
+          target: 'schedule',
           type: 'error',
           title: 'Error sa Pag-scan',
           subtitle: msg,
@@ -171,32 +181,37 @@ const ScheduleScanModal = ({
       const msg =
         err.response?.data?.message ||
         'Hindi ito school schedule o class timetable. Pakisiguradong Certificate of Registration (COR) o class schedule ang inyong nilapag.';
-      setErrorMessage(msg);
-      onNotifyIsland?.({
+      setScheduleTask((prev) => ({ ...prev, scanning: false, errorMessage: msg }));
+      triggerIsland({
+        id: 'schedule_scan_err',
+        target: 'schedule',
         type: 'error',
         title: 'Hindi Matanggap ang File',
         subtitle: msg,
       });
-    } finally {
-      setScanning(false);
     }
   };
 
   const handleRemoveSubject = (index) => {
-    setExtractedSubjects((prev) => prev.filter((_, i) => i !== index));
+    setScheduleTask((prev) => ({
+      ...prev,
+      extractedSubjects: prev.extractedSubjects.filter((_, i) => i !== index),
+    }));
   };
 
   const handleFieldChange = (index, field, value) => {
-    setExtractedSubjects((prev) =>
-      prev.map((sub, i) => (i === index ? { ...sub, [field]: value } : sub))
-    );
+    setScheduleTask((prev) => ({
+      ...prev,
+      extractedSubjects: prev.extractedSubjects.map((sub, i) =>
+        i === index ? { ...sub, [field]: value } : sub
+      ),
+    }));
   };
 
   const handleConfirmImport = async () => {
     if (!extractedSubjects || extractedSubjects.length === 0) return;
 
-    setSaving(true);
-    setErrorMessage('');
+    setScheduleTask((prev) => ({ ...prev, saving: true, errorMessage: '' }));
 
     try {
       const res = await api.post('/subjects/batch-import', {
@@ -206,7 +221,9 @@ const ScheduleScanModal = ({
 
       if (res.data?.success) {
         onSuccess?.(res.data.subjectsCount, res.data.timetableCount);
-        onNotifyIsland?.({
+        triggerIsland({
+          id: 'schedule_saved',
+          target: 'schedule',
           type: 'success',
           title: `Na-save ang ${res.data.subjectsCount} Subjects!`,
           subtitle: 'Nai-sync na sa iyong Academic Courses at Timetable.',
@@ -216,106 +233,40 @@ const ScheduleScanModal = ({
     } catch (err) {
       console.error(err);
       const errText = err.response?.data?.message || 'Nagka-problema sa pag-save ng subjects.';
-      setErrorMessage(errText);
-      onNotifyIsland?.({
+      setScheduleTask((prev) => ({ ...prev, saving: false, errorMessage: errText }));
+      triggerIsland({
+        id: 'schedule_save_err',
+        target: 'schedule',
         type: 'error',
         title: 'Error sa Pag-save',
         subtitle: errText,
       });
-    } finally {
-      setSaving(false);
     }
   };
 
   const handleClose = () => {
-    setFile(null);
-    setPreviewUrl('');
-    setExtractedSubjects(null);
-    setErrorMessage('');
-    setIsMinimized?.(false);
-    onClose();
+    setScheduleTask((prev) => ({
+      ...prev,
+      isOpen: false,
+      isMinimized: false,
+      file: null,
+      previewUrl: '',
+      extractedSubjects: null,
+      errorMessage: '',
+      saving: false,
+      scanning: false,
+    }));
+    onClose?.();
   };
 
-  // If MINIMIZED: Show floating interactive Island Pill in bottom-right
-  if (isMinimized) {
-    return (
-      <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-5 duration-300">
-        <div
-          onClick={() => setIsMinimized?.(false)}
-          className="flex items-center gap-3.5 px-4 py-3 bg-slate-900/90 dark:bg-black/90 hover:bg-slate-900 text-white rounded-2xl shadow-2xl border border-slate-700/80 backdrop-blur-xl cursor-pointer hover:scale-105 transition-all group"
-        >
-          <div className="relative">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/30">
-              {scanning ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : extractedSubjects ? (
-                <CheckCircle className="w-5 h-5 text-emerald-400" />
-              ) : errorMessage ? (
-                <AlertCircle className="w-5 h-5 text-rose-400" />
-              ) : (
-                <Sparkles className="w-5 h-5 text-amber-300" />
-              )}
-            </div>
-            {scanning && (
-              <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
-              </span>
-            )}
-          </div>
+  const handleMinimize = () => {
+    setScheduleTask((prev) => ({ ...prev, isMinimized: true }));
+  };
 
-          <div className="pr-2">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-black tracking-wide">
-                {scanning
-                  ? 'Sina-scan ang Schedule...'
-                  : extractedSubjects
-                  ? `Ready to Review (${extractedSubjects.length})`
-                  : errorMessage
-                  ? 'May Error sa Scan'
-                  : 'Schedule Scanner'}
-              </span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-white/10 text-slate-300 font-bold uppercase">
-                Minimized
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-400 truncate max-w-[180px]">
-              {file?.name || 'I-click para i-maximize'}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-1 border-l border-white/10 pl-2">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsMinimized?.(false);
-              }}
-              className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
-              title="Maximize"
-            >
-              <Maximize2 className="w-4 h-4" />
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleClose();
-              }}
-              className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-rose-400 transition-colors"
-              title="Close"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Normal EXPANDED Modal
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
-        {/* Header with Minimize & Close */}
+        {/* Header */}
         <div className="p-5 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/25">
@@ -332,11 +283,10 @@ const ScheduleScanModal = ({
           </div>
 
           <div className="flex items-center gap-1">
-            {/* MINIMIZE BUTTON */}
             <button
-              onClick={() => setIsMinimized?.(true)}
+              onClick={handleMinimize}
               className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-              title="I-minimize habang naghihintay"
+              title="I-minimize (Magpapatuloy sa background kahit lumipat ng page)"
             >
               <Minus className="w-5 h-5" />
             </button>
@@ -352,7 +302,6 @@ const ScheduleScanModal = ({
 
         {/* Content Body */}
         <div className="p-5 flex-1 overflow-y-auto space-y-4">
-          {/* Error Banner */}
           {errorMessage && (
             <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 flex items-start gap-3 text-rose-700 dark:text-rose-300 text-xs animate-in slide-in-from-top duration-200">
               <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-rose-500" />
@@ -363,20 +312,13 @@ const ScheduleScanModal = ({
             </div>
           )}
 
-          {/* STEP 1: Upload / Dropzone (if not extracted yet) */}
+          {/* STEP 1: Upload / Dropzone */}
           {!extractedSubjects && (
             <div className="space-y-4">
               <div
                 onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
-                className={`relative border-2 border-dashed rounded-3xl p-8 text-center transition-all cursor-pointer flex flex-col items-center justify-center ${
-                  isDragging
-                    ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/20 scale-[0.99]'
-                    : file
-                    ? 'border-blue-300 dark:border-blue-800 bg-slate-50 dark:bg-slate-900/40'
-                    : 'border-slate-300 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-600 bg-slate-50/50 dark:bg-slate-900/20'
-                }`}
+                className="relative border-2 border-dashed rounded-3xl p-8 text-center transition-all cursor-pointer flex flex-col items-center justify-center border-slate-300 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-600 bg-slate-50/50 dark:bg-slate-900/20"
                 onClick={() => document.getElementById('sched-file-input')?.click()}
               >
                 <input
@@ -424,29 +366,20 @@ const ScheduleScanModal = ({
                         o i-click para mag-browse mula sa computer o phone
                       </p>
                     </div>
-                    <div className="flex gap-2 justify-center text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
-                      <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800">JPG/PNG</span>
-                      <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800">PDF</span>
-                      <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800">DOCX</span>
-                    </div>
                   </div>
                 )}
               </div>
 
               {/* Action Buttons */}
               <div className="flex items-center justify-between pt-2">
-                {scanning ? (
-                  <button
-                    type="button"
-                    onClick={() => setIsMinimized?.(true)}
-                    className="text-xs text-blue-600 dark:text-blue-400 font-bold hover:underline flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Minus className="w-4 h-4" />
-                    <span>I-minimize habang naghihintay</span>
-                  </button>
-                ) : (
-                  <div />
-                )}
+                <button
+                  type="button"
+                  onClick={handleMinimize}
+                  className="text-xs text-blue-600 dark:text-blue-400 font-bold hover:underline flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Minus className="w-4 h-4" />
+                  <span>I-minimize (Mag-browse sa ibang pages)</span>
+                </button>
 
                 <div className="flex gap-3">
                   <button
@@ -465,7 +398,7 @@ const ScheduleScanModal = ({
                     {scanning ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Sina-scan ng AI ang Schedule...</span>
+                        <span>Sina-scan ng AI...</span>
                       </>
                     ) : (
                       <>
@@ -494,9 +427,12 @@ const ScheduleScanModal = ({
                 </div>
                 <button
                   onClick={() => {
-                    setExtractedSubjects(null);
-                    setFile(null);
-                    setPreviewUrl('');
+                    setScheduleTask((prev) => ({
+                      ...prev,
+                      extractedSubjects: null,
+                      file: null,
+                      previewUrl: '',
+                    }));
                   }}
                   className="text-xs text-blue-600 dark:text-blue-400 hover:underline font-bold"
                 >
@@ -509,7 +445,9 @@ const ScheduleScanModal = ({
                 <input
                   type="checkbox"
                   checked={saveToTimetable}
-                  onChange={(e) => setSaveToTimetable(e.target.checked)}
+                  onChange={(e) =>
+                    setScheduleTask((prev) => ({ ...prev, saveToTimetable: e.target.checked }))
+                  }
                   className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
                 />
                 <div className="text-slate-800 dark:text-slate-200 font-medium">
@@ -582,7 +520,12 @@ const ScheduleScanModal = ({
                         <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                         <input
                           type="text"
-                          value={sub.scheduleText || (sub.days?.length ? `${sub.days.join(', ')} ${sub.startTime}-${sub.endTime}` : '')}
+                          value={
+                            sub.scheduleText ||
+                            (sub.days?.length
+                              ? `${sub.days.join(', ')} ${sub.startTime}-${sub.endTime}`
+                              : '')
+                          }
                           onChange={(e) => handleFieldChange(idx, 'scheduleText', e.target.value)}
                           placeholder="Sched: MWF 8-10AM"
                           className="w-full bg-transparent text-[11px] focus:outline-none"
@@ -591,19 +534,13 @@ const ScheduleScanModal = ({
                     </div>
                   </div>
                 ))}
-
-                {extractedSubjects.length === 0 && (
-                  <p className="text-center text-xs text-slate-400 py-6">
-                    Lahat ng subjects ay tinanggal. Mag-scan ulit kung nais.
-                  </p>
-                )}
               </div>
 
               {/* Confirm Buttons */}
               <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
-                  onClick={() => setIsMinimized?.(true)}
+                  onClick={handleMinimize}
                   className="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 font-bold flex items-center gap-1 cursor-pointer"
                 >
                   <Minus className="w-4 h-4" />
@@ -627,7 +564,7 @@ const ScheduleScanModal = ({
                     {saving ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Sine-save ang mga Subjects...</span>
+                        <span>Sine-save...</span>
                       </>
                     ) : (
                       <>

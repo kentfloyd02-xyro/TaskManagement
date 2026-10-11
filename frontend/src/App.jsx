@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { OfflineProvider } from './context/OfflineContext';
+import { GlobalTaskProvider } from './context/GlobalTaskContext';
 import AppLayout from './components/layout/AppLayout';
 import Dashboard from './pages/Dashboard';
 import TaskCenter from './pages/TaskCenter';
@@ -57,7 +58,8 @@ function App() {
     <AuthProvider>
       <OfflineProvider>
         <BrowserRouter>
-          <Routes>
+          <GlobalTaskProvider>
+            <Routes>
             {/* Public Auth Routes */}
             <Route
               path="/login"
@@ -115,6 +117,7 @@ function App() {
             {/* Root Redirect */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
+          </GlobalTaskProvider>
         </BrowserRouter>
       </OfflineProvider>
     </AuthProvider>

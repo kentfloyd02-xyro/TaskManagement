@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import client from '../api/client';
 import defaultQuestions from '../data/defaultExamQuestions.json';
-import UploadMaterialModal from '../components/reviewer/UploadMaterialModal';
+import { useOutletContext } from 'react-router-dom';
+import { useGlobalTasks } from '../context/GlobalTaskContext';
 import {
   BookOpen,
   Upload,
@@ -33,7 +34,8 @@ const ExamReviewer = () => {
   // Stored custom reviewers from MongoDB
   const [materials, setMaterials] = useState([]);
   const [loadingMaterials, setLoadingMaterials] = useState(false);
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const outletContext = useOutletContext();
+  const { reviewerTask, setReviewerTask } = useGlobalTasks();
 
   // Active review session
   const [activeMaterial, setActiveMaterial] = useState(null);
@@ -64,7 +66,7 @@ const ExamReviewer = () => {
 
   useEffect(() => {
     fetchMaterials();
-  }, [activeCategory]);
+  }, [activeCategory, outletContext?.refreshTrigger]);
 
   // Timer countdown
   useEffect(() => {
@@ -169,6 +171,20 @@ const ExamReviewer = () => {
     setIsSessionCompleted(false);
     setTimeLeft(mat.hasTimer && mat.timerDurationSeconds ? mat.timerDurationSeconds : null);
   };
+
+  // Automatically launch generated reviewer when background creation completes
+  useEffect(() => {
+    if (reviewerTask.generatedData) {
+      fetchMaterials();
+      handleStartCustomMaterial(reviewerTask.generatedData);
+      setReviewerTask((prev) => ({
+        ...prev,
+        generatedData: null,
+        isOpen: false,
+        isMinimized: false,
+      }));
+    }
+  }, [reviewerTask.generatedData]);
 
   // Delete material from DB
   const handleDeleteMaterial = async (e, id) => {
@@ -304,7 +320,14 @@ const ExamReviewer = () => {
         {/* Upload File Button */}
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setIsUploadModalOpen(true)}
+            onClick={() =>
+              setReviewerTask((prev) => ({
+                ...prev,
+                isOpen: true,
+                isMinimized: false,
+                category: activeCategory,
+              }))
+            }
             className="flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:opacity-90 shadow-md shadow-blue-500/20 active:scale-95 transition-all cursor-pointer"
           >
             <Upload className="w-4 h-4" />
@@ -726,16 +749,6 @@ const ExamReviewer = () => {
         </div>
       )}
 
-      {/* Upload File Modal */}
-      <UploadMaterialModal
-        isOpen={isUploadModalOpen}
-        onClose={() => setIsUploadModalOpen(false)}
-        initialCategory={activeCategory}
-        onSuccess={(createdMaterial) => {
-          fetchMaterials();
-          handleStartCustomMaterial(createdMaterial);
-        }}
-      />
     </div>
   );
 };

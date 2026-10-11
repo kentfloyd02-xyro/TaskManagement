@@ -4,10 +4,16 @@ import Sidebar from './Sidebar';
 import QuickAddModal from '../tasks/QuickAddModal';
 import AIChatbot from '../ai/AIChatbot';
 import OfflineBanner from '../common/OfflineBanner';
+import DynamicIslandNotification from '../common/DynamicIslandNotification';
+import FloatingTaskPills from '../common/FloatingTaskPills';
+import ScheduleScanModal from '../subjects/ScheduleScanModal';
+import UploadMaterialModal from '../reviewer/UploadMaterialModal';
+import { useGlobalTasks } from '../../context/GlobalTaskContext';
 
 const AppLayout = () => {
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const { scheduleTask, setScheduleTask, reviewerTask, setReviewerTask } = useGlobalTasks();
 
   const handleTaskCreated = () => {
     setIsQuickAddOpen(false);
@@ -37,6 +43,27 @@ const AppLayout = () => {
 
       {/* Floating & Expandable AI Study Chatbot */}
       <AIChatbot />
+
+      {/* Global Dynamic Island Notification (Top Center) */}
+      <DynamicIslandNotification />
+
+      {/* Global Floating Minimized Task Pills (Bottom Right) */}
+      <FloatingTaskPills />
+
+      {/* Global Schedule Auto-Scan Modal */}
+      <ScheduleScanModal
+        isOpen={scheduleTask.isOpen && !scheduleTask.isMinimized}
+        onClose={() => setScheduleTask((prev) => ({ ...prev, isOpen: false, isMinimized: false }))}
+        onSuccess={() => setRefreshTrigger((p) => p + 1)}
+      />
+
+      {/* Global Exam Reviewer Generator Modal */}
+      <UploadMaterialModal
+        isOpen={reviewerTask.isOpen && !reviewerTask.isMinimized}
+        onClose={() => setReviewerTask((prev) => ({ ...prev, isOpen: false, isMinimized: false }))}
+        initialCategory={reviewerTask.category || 'quiz'}
+        onSuccess={() => setRefreshTrigger((p) => p + 1)}
+      />
     </div>
   );
 };

@@ -10,32 +10,62 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
+  Minus,
 } from 'lucide-react';
+import { useGlobalTasks } from '../../context/GlobalTaskContext';
 
 const UploadMaterialModal = ({ isOpen, onClose, onSuccess, initialCategory = 'quiz' }) => {
+  const { reviewerTask, setReviewerTask, triggerIsland } = useGlobalTasks();
+
   const [file, setFile] = useState(null);
   const [subject, setSubject] = useState('');
-  const [category, setCategory] = useState(initialCategory); // quiz or exam
-  const [questionCount, setQuestionCount] = useState(10); // 10, 25, 50
-  const [questionType, setQuestionType] = useState('multiple_choice'); // multiple_choice, identification, enumeration, mixed
+  const [category, setCategory] = useState(initialCategory);
+  const [questionCount, setQuestionCount] = useState(10);
+  const [questionType, setQuestionType] = useState('multiple_choice');
   const [hasTimer, setHasTimer] = useState(false);
   const [timerMinutes, setTimerMinutes] = useState(15);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  if (!isOpen) return null;
+  React.useEffect(() => {
+    if (reviewerTask.category) {
+      setCategory(reviewerTask.category);
+    }
+  }, [reviewerTask.category]);
+
+  if (!isOpen || reviewerTask.isMinimized) return null;
 
   const handleFileChange = (e) => {
     const selected = e.target.files?.[0];
     if (selected) {
       setFile(selected);
       setError('');
-      // If subject is blank, autofill from filename
       if (!subject) {
         const cleanName = selected.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
         setSubject(cleanName.slice(0, 30));
       }
     }
+  };
+
+  const handleMinimize = () => {
+    setReviewerTask((prev) => ({
+      ...prev,
+      isOpen: true,
+      isMinimized: true,
+      generating: loading,
+      file,
+      subject,
+    }));
+  };
+
+  const handleClose = () => {
+    setReviewerTask((prev) => ({
+      ...prev,
+      isOpen: false,
+      isMinimized: false,
+      generating: false,
+    }));
+    onClose();
   };
 
   const handleSubmit = async (e) => {
@@ -57,6 +87,25 @@ const UploadMaterialModal = ({ isOpen, onClose, onSuccess, initialCategory = 'qu
     setLoading(true);
     setError('');
 
+    // Update global reviewer state for background tracking
+    setReviewerTask((prev) => ({
+      ...prev,
+      isOpen: true,
+      generating: true,
+      file,
+      subject: subject.trim(),
+      errorMessage: '',
+    }));
+
+    // Trigger Dynamic Island notification
+    triggerIsland({
+      id: 'reviewer_gen',
+      target: 'reviewer',
+      type: 'generating',
+      title: 'Gine-generate ang Reviewer...',
+      subtitle: `${subject.trim()} (${questionCount} items)`,
+    });
+
     try {
       const formData = new FormData();
       formData.append('file', file);
@@ -72,13 +121,42 @@ const UploadMaterialModal = ({ isOpen, onClose, onSuccess, initialCategory = 'qu
       });
 
       if (res.data?.success) {
-        onSuccess(res.data.data);
-        onClose();
+        setReviewerTask((prev) => ({
+          ...prev,
+          generating: false,
+          isMinimized: false,
+          generatedData: res.data.data,
+        }));
+
+        triggerIsland({
+          id: 'reviewer_gen_done',
+          target: 'reviewer',
+          type: 'success',
+          title: 'Reviewer Generated!',
+          subtitle: `Handa na ang reviewer para sa ${subject.trim()}.`,
+        });
+
+        if (typeof onSuccess === 'function') {
+          onSuccess(res.data.data);
+        }
+        handleClose();
       }
     } catch (err) {
       const msg =
         err.response?.data?.message || 'Failed to process file and generate questions. Please try again.';
       setError(msg);
+      setReviewerTask((prev) => ({
+        ...prev,
+        generating: false,
+        errorMessage: msg,
+      }));
+      triggerIsland({
+        id: 'reviewer_gen_err',
+        target: 'reviewer',
+        type: 'error',
+        title: 'Error sa Pag-generate',
+        subtitle: msg,
+      });
     } finally {
       setLoading(false);
     }
@@ -87,7 +165,7 @@ const UploadMaterialModal = ({ isOpen, onClose, onSuccess, initialCategory = 'qu
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="w-full max-w-xl bg-white dark:bg-[#0f172a] rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Header */}
+        {/* Header with Minimize */}
         <div className="p-6 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/25">
@@ -102,72 +180,84 @@ const UploadMaterialModal = ({ isOpen, onClose, onSuccess, initialCategory = 'qu
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handleMinimize}
+              className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              title="I-minimize (Magpapatuloy sa background kahit lumipat ng page)"
+            >
+              <Minus className="w-5 h-5" />
+            </button>
+            <button
+              onClick={handleClose}
+              className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-5">
           {error && (
-            <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900/80 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-start gap-2.5">
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-              <span>{error}</span>
+            <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 flex items-start gap-3 text-rose-700 dark:text-rose-300 text-xs animate-in slide-in-from-top duration-200">
+              <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-rose-500" />
+              <div className="flex-1">
+                <p className="font-bold">Error Generating Reviewer</p>
+                <p className="mt-0.5 leading-relaxed">{error}</p>
+              </div>
             </div>
           )}
 
-          {/* File Upload Zone */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+          {/* File Drag / Drop area */}
+          <div>
+            <label className="block text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
               Upload Study Material (.pdf, .docx, .pptx, .txt)
             </label>
-            <label className="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-400 rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-colors bg-slate-50/50 dark:bg-slate-800/30 group">
-              <Upload className="w-8 h-8 text-slate-400 group-hover:text-blue-500 transition-colors mb-2" />
-              {file ? (
-                <div className="space-y-1">
-                  <p className="text-sm font-bold text-blue-600 dark:text-blue-400 flex items-center justify-center gap-1.5">
-                    <FileText className="w-4 h-4" />
-                    {file.name}
-                  </p>
-                  <p className="text-[11px] text-slate-400">
-                    {(file.size / (1024 * 1024)).toFixed(2)} MB • Click to change file
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-1">
-                  <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
-                    I-click dito para pumili ng file
-                  </p>
-                  <p className="text-xs text-slate-400">
-                    Supports PowerPoint, Word, PDF, at Text files up to 25MB
-                  </p>
-                </div>
-              )}
+            <label className="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-blue-500 rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer transition-colors bg-slate-50/50 dark:bg-slate-900/40">
               <input
                 type="file"
-                accept=".pdf,.docx,.pptx,.txt,.json"
+                accept=".pdf,.docx,.pptx,.txt"
                 onChange={handleFileChange}
                 className="hidden"
               />
+              {file ? (
+                <div className="text-center space-y-1">
+                  <div className="flex items-center justify-center gap-2 text-blue-600 dark:text-blue-400 font-bold text-sm">
+                    <FileText className="w-4 h-4" />
+                    <span>{file.name}</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400">
+                    {(file.size / (1024 * 1024)).toFixed(2)} MB &bull; Click to change file
+                  </p>
+                </div>
+              ) : (
+                <div className="text-center space-y-2">
+                  <div className="p-3 bg-blue-50 dark:bg-blue-950/60 text-blue-600 rounded-2xl w-fit mx-auto">
+                    <Upload className="w-6 h-6" />
+                  </div>
+                  <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Click to browse notes, syllabus, or lecture slides
+                  </p>
+                  <p className="text-[10px] text-slate-400">Max file size: 25MB</p>
+                </div>
+              )}
             </label>
           </div>
 
-          {/* Category Toggle: Quiz vs Exam */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+          {/* Category Toggle */}
+          <div>
+            <label className="block text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
               Category
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => setCategory('quiz')}
-                className={`p-3 rounded-2xl border text-center font-bold text-sm transition-all cursor-pointer ${
+                className={`py-3 rounded-2xl font-bold text-xs transition-all ${
                   category === 'quiz'
-                    ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20'
-                    : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
+                    ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
                 }`}
               >
                 📝 Quiz (Quick Practice)
@@ -175,10 +265,10 @@ const UploadMaterialModal = ({ isOpen, onClose, onSuccess, initialCategory = 'qu
               <button
                 type="button"
                 onClick={() => setCategory('exam')}
-                className={`p-3 rounded-2xl border text-center font-bold text-sm transition-all cursor-pointer ${
+                className={`py-3 rounded-2xl font-bold text-xs transition-all ${
                   category === 'exam'
-                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-500/20'
-                    : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
+                    ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
                 }`}
               >
                 🎓 Major Exam Simulator
@@ -187,141 +277,128 @@ const UploadMaterialModal = ({ isOpen, onClose, onSuccess, initialCategory = 'qu
           </div>
 
           {/* Subject Name */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+          <div>
+            <label className="block text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
               Subject / Course Name
             </label>
             <input
               type="text"
-              required
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              placeholder="Halimbawa: CC106 - Application Development, History, Biology"
-              className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="e.g. IT101, Data Structures, Modern Biology"
+              className="w-full bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 rounded-2xl px-4 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
-          {/* Question Count Selection: 10 | 25 | 50 */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+          {/* Question Count */}
+          <div>
+            <label className="block text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
               Number of Questions
             </label>
-            <div className="grid grid-cols-3 gap-3">
-              {[10, 25, 50].map((count) => (
+            <div className="grid grid-cols-3 gap-2">
+              {[10, 25, 50].map((num) => (
                 <button
-                  key={count}
+                  key={num}
                   type="button"
-                  onClick={() => setQuestionCount(count)}
-                  className={`p-2.5 rounded-xl border text-center font-bold text-xs transition-all cursor-pointer ${
-                    questionCount === count
-                      ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                      : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100'
+                  onClick={() => setQuestionCount(num)}
+                  className={`py-2.5 rounded-2xl font-bold text-xs transition-all ${
+                    questionCount === num
+                      ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
                   }`}
                 >
-                  {count} Questions
+                  {num} Questions
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Question Type: Multiple Choice, Identification, Enumeration, Mixed */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+          {/* Question Format */}
+          <div>
+            <label className="block text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
               Question Format
             </label>
-            <div className="grid grid-cols-2 gap-2 text-xs font-bold">
+            <div className="grid grid-cols-2 gap-2 text-xs">
               {[
                 { id: 'multiple_choice', label: '🔘 Multiple Choice Only' },
                 { id: 'identification', label: '✍️ Identification Only' },
                 { id: 'enumeration', label: '📋 Enumeration Only' },
                 { id: 'mixed', label: '🔀 Mixed / Halo-halo' },
-              ].map((t) => (
+              ].map((fmt) => (
                 <button
-                  key={t.id}
+                  key={fmt.id}
                   type="button"
-                  onClick={() => setQuestionType(t.id)}
-                  className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                    questionType === t.id
-                      ? 'bg-indigo-50 dark:bg-indigo-950/60 border-indigo-400 dark:border-indigo-600 text-indigo-700 dark:text-indigo-300 ring-2 ring-indigo-500/20'
-                      : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'
+                  onClick={() => setQuestionType(fmt.id)}
+                  className={`p-3 rounded-2xl font-bold border transition-all text-left flex items-center ${
+                    questionType === fmt.id
+                      ? 'border-blue-600 bg-blue-50/60 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400'
+                      : 'border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50'
                   }`}
                 >
-                  {t.label}
+                  {fmt.label}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Timer Mode: With Timer vs Off Time */}
-          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/80 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-blue-500" />
-                <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                  Timer Setting
-                </span>
-              </div>
+          {/* Timer Toggle */}
+          <div className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-100/60 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800">
+            <div className="flex items-center gap-2.5 text-xs font-bold text-slate-700 dark:text-slate-300">
+              <Clock className="w-4 h-4 text-blue-500" />
+              <span>Timer Setting</span>
+            </div>
+            <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => setHasTimer(!hasTimer)}
-                className={`px-3 py-1 rounded-full text-xs font-black transition-colors cursor-pointer ${
+                className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-colors ${
                   hasTimer
                     ? 'bg-blue-600 text-white'
                     : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
                 }`}
               >
-                {hasTimer ? 'WITH TIMER' : 'OFF TIME (Chill Mode)'}
+                {hasTimer ? 'Timer Active' : 'OFF TIME (Chill Mode)'}
               </button>
             </div>
-
-            {hasTimer && (
-              <div className="flex items-center gap-3 pt-1">
-                <span className="text-xs text-slate-500 font-medium">Duration:</span>
-                {[10, 15, 30, 45, 60].map((mins) => (
-                  <button
-                    key={mins}
-                    type="button"
-                    onClick={() => setTimerMinutes(mins)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${
-                      timerMinutes === mins
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300'
-                    }`}
-                  >
-                    {mins}m
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
 
-          {/* Footer Submit */}
-          <div className="pt-2 flex items-center justify-end gap-3">
+          {/* Footer Submit and Minimize buttons */}
+          <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800/80">
             <button
               type="button"
-              onClick={onClose}
-              disabled={loading}
-              className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              onClick={handleMinimize}
+              className="text-xs text-blue-600 dark:text-blue-400 font-bold hover:underline flex items-center gap-1.5 cursor-pointer"
             >
-              Cancel
+              <Minus className="w-4 h-4" />
+              <span>I-minimize habang nag-aantay</span>
             </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:opacity-90 text-white font-bold text-xs shadow-md shadow-blue-500/25 flex items-center gap-2 disabled:opacity-50 cursor-pointer"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Generating Questions via Gemini AI...</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4" />
-                  <span>Generate Reviewer Now</span>
-                </>
-              )}
-            </button>
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleClose}
+                className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading || !file}
+                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 disabled:opacity-40 flex items-center gap-2 cursor-pointer transition-all"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>AI Generating ({questionCount} Items)...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    <span>Generate Reviewer</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </form>
       </div>
