@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/client';
-import { BookOpen, Plus, Trash2, Edit2, Archive, CheckCircle } from 'lucide-react';
+import { BookOpen, Plus, Trash2, Edit2, Archive, CheckCircle, Sparkles, UploadCloud } from 'lucide-react';
+import ScheduleScanModal from '../components/subjects/ScheduleScanModal';
 
 const Subjects = () => {
   const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showScanModal, setShowScanModal] = useState(false);
+  const [successBanner, setSuccessBanner] = useState('');
 
   // Form states
   const [code, setCode] = useState('');
@@ -77,23 +80,78 @@ const Subjects = () => {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
-      <div className="flex items-center justify-between">
+      {/* Header and Actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
             Academic Subjects
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            Manage your enrolled courses, instructors, and class schedules.
+            I-manage ang iyong mga enrolled courses, instructors, at class schedules.
           </p>
         </div>
 
-        <button
-          onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-blue-500/20 cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          Add Subject
-        </button>
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => setShowScanModal(true)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-sm font-bold shadow-md shadow-blue-500/20 active:scale-95 transition-all cursor-pointer"
+            title="I-scan ang imahe o file ng iyong school schedule"
+          >
+            <Sparkles className="w-4 h-4 text-amber-300" />
+            <span>Scan Schedule</span>
+          </button>
+
+          <button
+            onClick={() => setShowModal(true)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-sm font-semibold transition-all cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add Manual</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Success Banner */}
+      {successBanner && (
+        <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 flex items-center justify-between text-emerald-800 dark:text-emerald-200 text-sm animate-in fade-in duration-200 shadow-sm">
+          <div className="flex items-center gap-2.5 font-bold">
+            <CheckCircle className="w-5 h-5 text-emerald-500" />
+            <span>{successBanner}</span>
+          </div>
+          <button
+            onClick={() => setSuccessBanner('')}
+            className="text-xs text-emerald-600 dark:text-emerald-400 font-bold hover:underline"
+          >
+            Close
+          </button>
+        </div>
+      )}
+
+      {/* Drag & Drop Hero Quick-Action Bar */}
+      <div
+        onClick={() => setShowScanModal(true)}
+        className="p-5 rounded-3xl border-2 border-dashed border-blue-200 dark:border-blue-900/60 bg-gradient-to-r from-blue-50/70 via-indigo-50/40 to-transparent dark:from-blue-950/20 dark:via-indigo-950/10 hover:border-blue-400 dark:hover:border-blue-600 transition-all cursor-pointer flex items-center justify-between gap-4 group"
+      >
+        <div className="flex items-center gap-3.5">
+          <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 text-blue-600 shadow-sm border border-blue-100 dark:border-slate-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <UploadCloud className="w-6 h-6 text-blue-600" />
+          </div>
+          <div>
+            <h3 className="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
+              <span>May kopya ka ba ng School Schedule o COR?</span>
+              <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300">
+                AI Auto-Add
+              </span>
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              I-drop o i-click dito para mag-scan ng schedule image/PDF at awtomatikong magdagdag ng lahat ng subjects.
+            </p>
+          </div>
+        </div>
+
+        <span className="hidden sm:inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-blue-600 dark:text-blue-400 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-xs">
+          <Sparkles className="w-3.5 h-3.5" /> Mag-upload
+        </span>
       </div>
 
       {/* Grid of Subjects */}
@@ -250,6 +308,22 @@ const Subjects = () => {
           </div>
         </div>
       )}
+
+      {/* Schedule Auto-Scan Modal */}
+      <ScheduleScanModal
+        isOpen={showScanModal}
+        onClose={() => setShowScanModal(false)}
+        onSuccess={(subCount, timetableCount) => {
+          fetchSubjects();
+          setSuccessBanner(
+            `🎉 Matagumpay na na-import ang ${subCount} subjects! ${
+              timetableCount > 0
+                ? `Nai-sync din ang ${timetableCount} classes sa iyong Timetable na may push reminders.`
+                : ''
+            }`
+          );
+        }}
+      />
     </div>
   );
 };

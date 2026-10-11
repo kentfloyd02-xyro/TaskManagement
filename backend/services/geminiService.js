@@ -228,10 +228,113 @@ STRICT RESPONSE RULES:
   return response.text || 'Paumanhin, hindi ako nakabuo ng sagot sa pagkakataong ito.';
 }
 
+/**
+ * Parse an uploaded schedule (image or document) using Gemini 3.8 Flash.
+ * Validates if the file is genuinely a school/class schedule.
+ * Returns array of parsed subject/schedule items or throws validation error.
+ */
+async function parseScheduleWithGemini({ mimeType, fileBuffer, textContent }) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error('Gemini API key is not configured on the server.');
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
+  const modelName = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+
+  const systemInstruction = `
+You are an expert academic schedule analyzer and OCR system for students.
+Your job is to examine the uploaded file (image, PDF, or text) and determine whether it represents a School/Class Schedule, Enrollment Form, Certificate of Registration (COR), Course Timetable, or Syllabus list of classes.
+
+STRICT VALIDATION RULE:
+- If the file is NOT a school schedule / class timetable (for example: random photos, selfie, food, memes, receipts, unrelated essays, arbitrary code), you MUST return:
+{"isSchedule": false, "reason": "Hindi ito school schedule o class timetable. Mag-upload ng valid na Certificate of Registration (COR), timetable image, o study schedule."}
+
+- If it IS a valid class schedule, extract ALL subjects and class meetings into this JSON format:
+{
+  "isSchedule": true,
+  "subjects": [
+    {
+      "code": "IT 101",
+      "name": "Introduction to Computing",
+      "instructor": "Prof. Santos",
+      "room": "Room 304 / Lab 1",
+      "days": ["Monday", "Wednesday", "Friday"], // Must only be Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, or Sunday
+      "startTime": "08:00", // 24-hour format HH:MM (e.g. 08:00, 13:30)
+      "endTime": "10:00",   // 24-hour format HH:MM
+      "scheduleText": "MWF 8:00 AM - 10:00 AM"
+    }
+  ]
+}
+
+CRITICAL RULES:
+1. Always normalize days to full English day names: "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday". (Convert M->Monday, T->Tuesday, W->Wednesday, TH->Thursday, F->Friday, S->Saturday, Su->Sunday, MWF, TTH, etc.)
+2. If time is 12-hour (e.g. 1:30 PM), convert to 24-hour format ("13:30"). If ambiguous, make a sensible educated guess.
+3. Return ONLY a valid JSON object. Do not wrap in markdown or conversational notes.
+`;
+
+  let parts = [{ text: systemInstruction }];
+
+  if (fileBuffer && mimeType && mimeType.startsWith('image/')) {
+    parts.push({
+      inlineData: {
+        mimeType: mimeType,
+        data: Buffer.isBuffer(fileBuffer) ? fileBuffer.toString('base64') : fileBuffer,
+      },
+    });
+    parts.push({ text: 'Analyze this schedule image and extract all subjects in the exact JSON schema.' });
+  } else if (fileBuffer && mimeType === 'application/pdf') {
+    // If it's a PDF file
+    parts.push({
+      inlineData: {
+        mimeType: 'application/pdf',
+        data: Buffer.isBuffer(fileBuffer) ? fileBuffer.toString('base64') : fileBuffer,
+      },
+    });
+    parts.push({ text: 'Analyze this PDF document and extract all class schedules in the exact JSON schema.' });
+  } else if (textContent) {
+    parts.push({
+      text: `Analyze this text extracted from a schedule document:\n\n${textContent.slice(0, 30000)}`,
+    });
+  } else {
+    throw new Error('Walang naibigay na file data o text content para ma-scan.');
+  }
+
+  const response = await ai.models.generateContent({
+    model: modelName,
+    contents: parts,
+    config: {
+      temperature: 0.1,
+    },
+  });
+
+  const responseText = response.text || '';
+  const cleaned = responseText
+    .replace(/^```json/m, '')
+    .replace(/^```/m, '')
+    .replace(/```$/m, '')
+    .trim();
+
+  let parsed = null;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch (err) {
+    const match = cleaned.match(/\{[\s\S]*\}/);
+    if (match) {
+      parsed = JSON.parse(match[0]);
+    } else {
+      throw new Error('Hindi ma-parse ang sagot ng AI. Pakisubukan muli.');
+    }
+  }
+
+  return parsed;
+}
+
 module.exports = {
   DAILY_TOKEN_LIMIT,
   checkAndIncrementAiUsage,
   getAiUsageStatus,
   generateReviewQuestions,
   generateChatbotReply,
+  parseScheduleWithGemini,
 };
