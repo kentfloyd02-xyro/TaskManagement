@@ -52,6 +52,16 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    aiUsage: {
+      count: {
+        type: Number,
+        default: 0,
+      },
+      lastResetDate: {
+        type: String,
+        default: () => new Date().toISOString().slice(0, 10),
+      },
+    },
   },
   {
     timestamps: true,

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import QuickAddModal from '../tasks/QuickAddModal';
+import AIChatbot from '../ai/AIChatbot';
 
 const AppLayout = () => {
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
@@ -31,6 +32,9 @@ const AppLayout = () => {
           onSuccess={handleTaskCreated}
         />
       )}
+
+      {/* Floating & Expandable AI Study Chatbot */}
+      <AIChatbot />
     </div>
   );
 };

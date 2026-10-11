@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import client from '../api/client';
 import defaultQuestions from '../data/defaultExamQuestions.json';
+import UploadMaterialModal from '../components/reviewer/UploadMaterialModal';
 import {
   BookOpen,
   Upload,
@@ -14,65 +16,75 @@ import {
   ChevronLeft,
   Shuffle,
   AlertTriangle,
+  Clock,
+  Layers,
+  FileText,
+  Trash2,
+  Calendar,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
-const subjects = ['CC106', 'IAS101', 'PM101', 'ITE3', 'IM101', 'ITSP1C'];
+const defaultSubjects = ['CC106', 'IAS101', 'PM101', 'ITE3', 'IM101', 'ITSP1C'];
 
 const ExamReviewer = () => {
-  // Master questions pool
-  const [allQuestions, setAllQuestions] = useState(() => {
-    const saved = localStorage.getItem('custom_exam_qs');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        return defaultQuestions;
-      }
-    }
-    return defaultQuestions;
-  });
+  // Category Tab: 'quiz' | 'exam'
+  const [activeCategory, setActiveCategory] = useState('quiz');
 
-  const [selectedSubject, setSelectedSubject] = useState(() => localStorage.getItem('exam_selectedSubject') || null);
-  const [activeQuestions, setActiveQuestions] = useState(() => {
-    const saved = localStorage.getItem('exam_active_questions');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        return [];
-      }
-    }
-    return [];
-  });
+  // Stored custom reviewers from MongoDB
+  const [materials, setMaterials] = useState([]);
+  const [loadingMaterials, setLoadingMaterials] = useState(false);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(() => parseInt(localStorage.getItem('exam_currentQuestionIndex')) || 0);
-  const [score, setScore] = useState(() => parseInt(localStorage.getItem('exam_score')) || 0);
-  const [savedAnswers, setSavedAnswers] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('exam_savedAnswers')) || {};
-    } catch {
-      return {};
-    }
-  });
-
-  const [uploadFeedback, setUploadFeedback] = useState('');
-  const [isExamCompleted, setIsExamCompleted] = useState(() => localStorage.getItem('exam_isCompleted') === 'true');
+  // Active review session
+  const [activeMaterial, setActiveMaterial] = useState(null);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [score, setScore] = useState(0);
+  const [savedAnswers, setSavedAnswers] = useState({});
+  const [identificationInput, setIdentificationInput] = useState('');
+  const [isSessionCompleted, setIsSessionCompleted] = useState(false);
   const [shuffleMode, setShuffleMode] = useState(true);
 
-  // Sync state with localStorage
-  useEffect(() => {
-    if (selectedSubject) {
-      localStorage.setItem('exam_selectedSubject', selectedSubject);
-      localStorage.setItem('exam_active_questions', JSON.stringify(activeQuestions));
-      localStorage.setItem('exam_currentQuestionIndex', currentQuestionIndex);
-      localStorage.setItem('exam_score', score);
-      localStorage.setItem('exam_savedAnswers', JSON.stringify(savedAnswers));
-      localStorage.setItem('exam_isCompleted', isExamCompleted);
-    }
-  }, [selectedSubject, activeQuestions, currentQuestionIndex, score, savedAnswers, isExamCompleted]);
+  // Timer state
+  const [timeLeft, setTimeLeft] = useState(null);
 
-  // Fisher-Yates shuffle algorithm
+  // Load saved materials from backend
+  const fetchMaterials = async () => {
+    try {
+      setLoadingMaterials(true);
+      const res = await client.get(`/reviewer/materials?category=${activeCategory}`);
+      if (res.data?.success) {
+        setMaterials(res.data.data || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch materials', err);
+    } finally {
+      setLoadingMaterials(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMaterials();
+  }, [activeCategory]);
+
+  // Timer countdown
+  useEffect(() => {
+    if (timeLeft === null || timeLeft <= 0 || isSessionCompleted || !activeMaterial) return;
+
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          setIsSessionCompleted(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [timeLeft, isSessionCompleted, activeMaterial]);
+
+  // Fisher-Yates shuffle
   const shuffleArray = (array) => {
     const arr = [...array];
     for (let i = arr.length - 1; i > 0; i--) {
@@ -82,27 +94,26 @@ const ExamReviewer = () => {
     return arr;
   };
 
-  const handleStartSubject = (index) => {
-    const subj = subjects[index];
+  // Start Default Subject (Preset 50 items)
+  const handleStartDefaultSubject = (index) => {
+    const subj = defaultSubjects[index];
     const startIndex = index * 50;
-    const rawSet = allQuestions.slice(startIndex, startIndex + 50);
+    const rawSet = defaultQuestions.slice(startIndex, startIndex + 50);
 
-    // Shuffle questions and their choices if shuffleMode is active
     let preparedSet = rawSet.map((item, originalIdx) => ({
       ...item,
+      type: 'multiple_choice',
       originalNumber: originalIdx + 1,
     }));
 
     if (shuffleMode) {
       preparedSet = shuffleArray(preparedSet).map((item) => {
-        // Map choices with original indices to retain correct answer tracking
         const mappedChoices = item.a.map((choiceText, cIdx) => ({
           text: choiceText,
           isCorrect: cIdx === item.c,
         }));
         const shuffledChoices = shuffleArray(mappedChoices);
         const newCorrectIndex = shuffledChoices.findIndex((c) => c.isCorrect);
-
         return {
           ...item,
           a: shuffledChoices.map((c) => c.text),
@@ -111,137 +122,168 @@ const ExamReviewer = () => {
       });
     }
 
-    setSelectedSubject(subj);
-    setActiveQuestions(preparedSet);
+    setActiveMaterial({
+      title: `${subj} Standard Set`,
+      subject: subj,
+      category: activeCategory,
+      questions: preparedSet,
+      hasTimer: false,
+    });
     setCurrentQuestionIndex(0);
     setScore(0);
     setSavedAnswers({});
-    setIsExamCompleted(false);
+    setIsSessionCompleted(false);
+    setTimeLeft(null);
+  };
 
-    localStorage.setItem('exam_selectedSubject', subj);
-    localStorage.setItem('exam_active_questions', JSON.stringify(preparedSet));
-    localStorage.setItem('exam_currentQuestionIndex', 0);
-    localStorage.setItem('exam_score', 0);
-    localStorage.setItem('exam_savedAnswers', JSON.stringify({}));
-    localStorage.setItem('exam_isCompleted', false);
+  // Start Custom Generated Material from DB
+  const handleStartCustomMaterial = (mat) => {
+    let preparedQs = [...mat.questions];
+    if (shuffleMode) {
+      preparedQs = shuffleArray(preparedQs).map((item) => {
+        if (item.type === 'multiple_choice' && item.a?.length) {
+          const mappedChoices = item.a.map((choiceText, cIdx) => ({
+            text: choiceText,
+            isCorrect: cIdx === item.c,
+          }));
+          const shuffledChoices = shuffleArray(mappedChoices);
+          const newCorrectIndex = shuffledChoices.findIndex((c) => c.isCorrect);
+          return {
+            ...item,
+            a: shuffledChoices.map((c) => c.text),
+            c: newCorrectIndex,
+          };
+        }
+        return item;
+      });
+    }
+
+    setActiveMaterial({
+      ...mat,
+      questions: preparedQs,
+    });
+    setCurrentQuestionIndex(0);
+    setScore(0);
+    setSavedAnswers({});
+    setIdentificationInput('');
+    setIsSessionCompleted(false);
+    setTimeLeft(mat.hasTimer && mat.timerDurationSeconds ? mat.timerDurationSeconds : null);
+  };
+
+  // Delete material from DB
+  const handleDeleteMaterial = async (e, id) => {
+    e.stopPropagation();
+    if (!window.confirm('Sigurado ka bang nais mong burahin ang reviewer na ito?')) return;
+    try {
+      await client.delete(`/reviewer/materials/${id}`);
+      setMaterials((prev) => prev.filter((m) => m._id !== id));
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleResetToMenu = () => {
-    localStorage.removeItem('exam_selectedSubject');
-    localStorage.removeItem('exam_active_questions');
-    localStorage.removeItem('exam_currentQuestionIndex');
-    localStorage.removeItem('exam_score');
-    localStorage.removeItem('exam_savedAnswers');
-    localStorage.removeItem('exam_isCompleted');
-    setSelectedSubject(null);
-    setActiveQuestions([]);
+    setActiveMaterial(null);
     setCurrentQuestionIndex(0);
     setScore(0);
     setSavedAnswers({});
-    setIsExamCompleted(false);
+    setIdentificationInput('');
+    setIsSessionCompleted(false);
+    setTimeLeft(null);
+    fetchMaterials();
   };
 
-  const handleSelectAnswer = (choiceIndex) => {
+  // Answer multiple choice
+  const handleSelectChoice = (choiceIndex) => {
     if (savedAnswers[currentQuestionIndex] !== undefined) return;
 
-    const q = activeQuestions[currentQuestionIndex];
+    const q = activeMaterial.questions[currentQuestionIndex];
     const isCorrect = choiceIndex === q.c;
 
-    const newSavedAnswers = { ...savedAnswers, [currentQuestionIndex]: choiceIndex };
-    setSavedAnswers(newSavedAnswers);
+    setSavedAnswers((prev) => ({ ...prev, [currentQuestionIndex]: { choiceIndex, isCorrect } }));
 
-    let newScore = score;
     if (isCorrect) {
-      newScore = score + 1;
-      setScore(newScore);
+      setScore((s) => s + 1);
       try {
-        confetti({
-          particleCount: 25,
-          spread: 45,
-          origin: { y: 0.7 },
-        });
+        confetti({ particleCount: 25, spread: 45, origin: { y: 0.7 } });
       } catch (e) {}
     }
   };
 
-  const handleNextQuestion = () => {
-    const nextIdx = currentQuestionIndex + 1;
-    if (nextIdx >= activeQuestions.length) {
-      setIsExamCompleted(true);
+  // Submit identification answer
+  const handleSubmitIdentification = (e) => {
+    e?.preventDefault();
+    if (savedAnswers[currentQuestionIndex] !== undefined) return;
+
+    const q = activeMaterial.questions[currentQuestionIndex];
+    const userText = identificationInput.trim().toLowerCase();
+    const correctText = (q.expectedAnswer || '').trim().toLowerCase();
+
+    const isCorrect =
+      userText.length > 0 &&
+      (userText === correctText ||
+        userText.includes(correctText) ||
+        correctText.includes(userText));
+
+    setSavedAnswers((prev) => ({
+      ...prev,
+      [currentQuestionIndex]: { textAnswer: identificationInput, isCorrect },
+    }));
+
+    if (isCorrect) {
+      setScore((s) => s + 1);
       try {
-        confetti({
-          particleCount: 80,
-          spread: 80,
-          origin: { y: 0.5 },
-        });
+        confetti({ particleCount: 25, spread: 45, origin: { y: 0.7 } });
       } catch (e) {}
+    }
+  };
+
+  // Next Question
+  const handleNextQuestion = async () => {
+    setIdentificationInput('');
+    const nextIdx = currentQuestionIndex + 1;
+    if (nextIdx >= activeMaterial.questions.length) {
+      setIsSessionCompleted(true);
+      try {
+        confetti({ particleCount: 80, spread: 80, origin: { y: 0.5 } });
+      } catch (e) {}
+
+      // If custom material, update final score in DB
+      if (activeMaterial._id) {
+        try {
+          await client.put(`/reviewer/materials/${activeMaterial._id}/score`, { score });
+        } catch (e) {}
+      }
     } else {
       setCurrentQuestionIndex(nextIdx);
     }
   };
 
-  // Upload main.js or JSON questions file
-  const handleFileUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const text = event.target?.result;
-        let parsedQs = null;
-
-        if (file.name.endsWith('.json')) {
-          parsedQs = JSON.parse(text);
-        } else {
-          // Parse JS file containing `const qs = [...]`
-          const match = text.match(/const\s+qs\s*=\s*(\[[\s\S]*?\]);?/);
-          if (match) {
-            try {
-              parsedQs = JSON.parse(match[1]);
-            } catch {
-              const parseFunc = new Function(`return ${match[1]};`);
-              parsedQs = parseFunc();
-            }
-          } else {
-            const parseFunc = new Function(`return ${text};`);
-            parsedQs = parseFunc();
-          }
-        }
-
-        if (Array.isArray(parsedQs) && parsedQs.length > 0 && parsedQs[0].q && parsedQs[0].a) {
-          setAllQuestions(parsedQs);
-          localStorage.setItem('custom_exam_qs', JSON.stringify(parsedQs));
-          setUploadFeedback(`Successfully imported ${parsedQs.length} questions from ${file.name}!`);
-          setTimeout(() => setUploadFeedback(''), 4000);
-        } else {
-          setUploadFeedback('Invalid format. File must contain array of { q, a, c } objects.');
-        }
-      } catch (err) {
-        setUploadFeedback(`Failed to parse file: ${err.message}`);
-      }
-    };
-    reader.readAsText(file);
-    e.target.value = '';
+  // Helper formatting for timer
+  const formatTime = (secs) => {
+    const mins = Math.floor(secs / 60);
+    const rem = secs % 60;
+    return `${mins}:${rem < 10 ? '0' : ''}${rem}`;
   };
 
-  const handleResetToDefault = () => {
-    localStorage.removeItem('custom_exam_qs');
-    setAllQuestions(defaultQuestions);
-    setUploadFeedback('Reset back to original exam template questions.');
-    setTimeout(() => setUploadFeedback(''), 3000);
+  const currentQ = activeMaterial?.questions?.[currentQuestionIndex] || {
+    q: '',
+    type: 'multiple_choice',
+    a: [],
+    c: 0,
   };
-
-  // Review Summary: collect mistakes
-  const wrongQuestions = activeQuestions.filter((q, idx) => {
-    const userChoice = savedAnswers[idx];
-    return userChoice !== undefined && userChoice !== q.c;
-  });
-
-  const currentQ = activeQuestions[currentQuestionIndex] || { q: '', a: [], c: 0 };
-  const currentSelectedAnswer = savedAnswers[currentQuestionIndex];
+  const currentAnswerRecord = savedAnswers[currentQuestionIndex];
+  const hasAnswered = currentAnswerRecord !== undefined;
   const questionNumber = currentQuestionIndex + 1;
-  const hasAnswered = currentSelectedAnswer !== undefined;
+  const totalQuestions = activeMaterial?.questions?.length || 0;
+
+  // Mistakes review
+  const wrongQuestions = activeMaterial
+    ? activeMaterial.questions.filter((q, idx) => {
+        const record = savedAnswers[idx];
+        return record !== undefined && !record.isCorrect;
+      })
+    : [];
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300">
@@ -252,95 +294,167 @@ const ExamReviewer = () => {
             <span className="p-2 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/25">
               <BookOpen className="w-5 h-5" />
             </span>
-            Midterm Reviewer & Exam Simulator
+            AI Smart Reviewer & Exam Simulator
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
-            Interactive multiple-choice reviewer with original reactions, shuffle, & mistakes summary.
+            Generate customized Quizzes & Major Exams from your slides, PDF, & Word notes.
           </p>
         </div>
 
-        {/* Upload Custom Answers & Questions */}
+        {/* Upload File Button */}
         <div className="flex items-center gap-2">
-          <label className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors shadow-2xs cursor-pointer">
-            <Upload className="w-3.5 h-3.5 text-blue-500" />
-            <span>Upload main.js / JSON</span>
-            <input type="file" accept=".js,.json,.txt" onChange={handleFileUpload} className="hidden" />
-          </label>
-
           <button
-            onClick={handleResetToDefault}
-            className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
-            title="Reset to default questions"
+            onClick={() => setIsUploadModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:opacity-90 shadow-md shadow-blue-500/20 active:scale-95 transition-all cursor-pointer"
           >
-            <RotateCcw className="w-4 h-4" />
+            <Upload className="w-4 h-4" />
+            <span>Upload File & Generate</span>
           </button>
         </div>
       </div>
 
-      {uploadFeedback && (
-        <div className="p-3.5 rounded-xl text-xs font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/80">
-          {uploadFeedback}
-        </div>
-      )}
-
-      {/* VIEW 1: SUBJECT SELECTION SCREEN */}
-      {!selectedSubject && (
-        <div className="bg-white/90 dark:bg-[#0f172a]/80 backdrop-blur-md rounded-3xl border border-slate-200/80 dark:border-slate-800/80 p-8 shadow-sm space-y-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pb-2 border-b border-slate-100 dark:border-slate-800/80">
-            <div className="text-center sm:text-left space-y-1">
-              <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                Select Exam Subject
-              </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                Choose a course subject to take the 50-item reviewer.
-              </p>
-            </div>
-
-            {/* Shuffle toggle */}
+      {/* VIEW 1: HOME / SELECTION MENU */}
+      {!activeMaterial && (
+        <div className="space-y-6">
+          {/* Category Tabs: QUIZ vs EXAM */}
+          <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-slate-200/60 dark:bg-slate-800/60 max-w-sm">
             <button
-              onClick={() => setShuffleMode(!shuffleMode)}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${
-                shuffleMode
-                  ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 border-blue-200 dark:border-blue-800'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700'
+              onClick={() => setActiveCategory('quiz')}
+              className={`flex-1 py-2 px-4 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                activeCategory === 'quiz'
+                  ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              <Shuffle className="w-3.5 h-3.5" />
-              <span>Shuffle Order: {shuffleMode ? 'ON' : 'OFF'}</span>
+              📝 Quizzes
+            </button>
+            <button
+              onClick={() => setActiveCategory('exam')}
+              className={`flex-1 py-2 px-4 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                activeCategory === 'exam'
+                  ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              🎓 Major Exams
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 pt-2">
-            {subjects.map((subj, index) => (
-              <button
-                key={subj}
-                onClick={() => handleStartSubject(index)}
-                className={`group p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 bg-slate-50/60 dark:bg-slate-800/50 hover:bg-gradient-to-r hover:from-blue-600 hover:to-indigo-600 hover:text-white dark:hover:border-blue-500 transition-all text-left shadow-2xs hover:shadow-lg hover:shadow-blue-500/20 active:scale-[0.98] cursor-pointer card-interactive animate-fade-in-up stagger-${index + 1}`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-white dark:bg-slate-700 group-hover:bg-white/20 group-hover:text-white text-slate-700 dark:text-slate-300 transition-colors">
-                    50 Questions
-                  </span>
-                  <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-white group-hover:translate-x-1 transition-transform" />
-                </div>
-                <h3 className="text-lg font-black text-slate-900 dark:text-white group-hover:text-white transition-colors">
-                  {subj}
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 group-hover:text-white/80 transition-colors mt-1 font-medium">
-                  Reviewer Set {index + 1}
+          {/* AI Generated Reviewers Section */}
+          <div className="bg-white/90 dark:bg-[#0f172a]/80 backdrop-blur-md rounded-3xl border border-slate-200/80 dark:border-slate-800/80 p-6 md:p-8 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-black text-slate-900 dark:text-white">
+                  My AI-Generated {activeCategory === 'quiz' ? 'Quizzes' : 'Exams'}
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                  Reviewers generated and saved for your account.
                 </p>
+              </div>
+
+              {/* Shuffle Order Toggle */}
+              <button
+                onClick={() => setShuffleMode(!shuffleMode)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${
+                  shuffleMode
+                    ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 border-blue-200 dark:border-blue-800'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700'
+                }`}
+              >
+                <Shuffle className="w-3.5 h-3.5" />
+                <span>Shuffle: {shuffleMode ? 'ON' : 'OFF'}</span>
               </button>
-            ))}
+            </div>
+
+            {loadingMaterials ? (
+              <p className="text-center text-xs text-slate-400 py-6">Loading materials...</p>
+            ) : materials.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {materials.map((mat) => (
+                  <div
+                    key={mat._id}
+                    onClick={() => handleStartCustomMaterial(mat)}
+                    className="group relative p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 bg-slate-50/60 dark:bg-slate-800/40 hover:bg-gradient-to-tr hover:from-blue-600 hover:to-indigo-600 hover:text-white transition-all text-left shadow-2xs hover:shadow-lg hover:shadow-blue-500/20 cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-md bg-white dark:bg-slate-700 group-hover:bg-white/20 group-hover:text-white text-slate-700 dark:text-slate-300">
+                        {mat.questionCount} Items
+                      </span>
+                      <button
+                        onClick={(e) => handleDeleteMaterial(e, mat._id)}
+                        className="p-1 rounded-md text-slate-400 hover:text-rose-500 group-hover:text-white/80 transition-colors"
+                        title="Delete reviewer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    <h3 className="text-base font-black text-slate-900 dark:text-white group-hover:text-white truncate">
+                      {mat.subject}
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 group-hover:text-white/80 truncate">
+                      {mat.title}
+                    </p>
+
+                    <div className="mt-3 pt-3 border-t border-slate-200/60 dark:border-slate-700/60 group-hover:border-white/20 flex items-center justify-between text-[11px] text-slate-400 group-hover:text-white/80">
+                      <span>{mat.hasTimer ? `⏱️ ${mat.timerDurationSeconds / 60}m` : '🌱 Off-time'}</span>
+                      {mat.lastScore !== null && <span>Best: {mat.lastScore}/{mat.questionCount}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-8 text-center rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 space-y-2">
+                <FileText className="w-8 h-8 text-slate-400 mx-auto" />
+                <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                  Wala ka pang na-upload na review material para sa {activeCategory}.
+                </p>
+                <p className="text-xs text-slate-400">
+                  I-click ang <strong>"Upload File & Generate"</strong> sa taas para gumawa agad ang AI!
+                </p>
+              </div>
+            )}
           </div>
 
-          <div className="text-center text-xs text-slate-400 pt-4 border-t border-slate-100 dark:border-slate-800 font-medium">
-            Loaded database: {allQuestions.length} total questions ({subjects.length} subjects x 50 items)
+          {/* Default Preset Subjects */}
+          <div className="bg-white/90 dark:bg-[#0f172a]/80 backdrop-blur-md rounded-3xl border border-slate-200/80 dark:border-slate-800/80 p-6 md:p-8 shadow-sm space-y-4">
+            <div>
+              <h2 className="text-lg font-black text-slate-900 dark:text-white">
+                Preset College Course Reviewers (50 Items Each)
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                Standard comprehensive review questions for core subjects.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {defaultSubjects.map((subj, index) => (
+                <button
+                  key={subj}
+                  onClick={() => handleStartDefaultSubject(index)}
+                  className="group p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 bg-slate-50/60 dark:bg-slate-800/40 hover:bg-gradient-to-r hover:from-blue-600 hover:to-indigo-600 hover:text-white transition-all text-left shadow-2xs hover:shadow-lg hover:shadow-blue-500/20 cursor-pointer"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-white dark:bg-slate-700 group-hover:bg-white/20 group-hover:text-white text-slate-700 dark:text-slate-300">
+                      50 Questions
+                    </span>
+                    <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-white group-hover:translate-x-1 transition-transform" />
+                  </div>
+                  <h3 className="text-lg font-black text-slate-900 dark:text-white group-hover:text-white">
+                    {subj}
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 group-hover:text-white/80 mt-1">
+                    Preset Set {index + 1}
+                  </p>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}
 
-      {/* VIEW 2: QUIZ COMPLETED SUMMARY SCREEN WITH MISTAKES BREAKDOWN */}
-      {selectedSubject && isExamCompleted && (
+      {/* VIEW 2: COMPLETED RESULTS SUMMARY */}
+      {activeMaterial && isSessionCompleted && (
         <div className="bg-white/90 dark:bg-[#0f172a]/80 backdrop-blur-md rounded-3xl border border-slate-200/80 dark:border-slate-800/80 p-8 shadow-sm space-y-8">
           <div className="text-center space-y-4">
             <div className="inline-flex p-4 rounded-3xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 ring-8 ring-emerald-500/10 mb-1">
@@ -349,40 +463,40 @@ const ExamReviewer = () => {
 
             <div className="space-y-1">
               <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
-                Exam Complete
+                {activeMaterial.category?.toUpperCase() || 'SESSION'} COMPLETED
               </span>
               <h2 className="text-3xl font-black text-slate-900 dark:text-white">
-                Subject: {selectedSubject}
+                {activeMaterial.subject} - {activeMaterial.title}
               </h2>
             </div>
 
             <div className="max-w-xs mx-auto p-6 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 space-y-1.5 shadow-2xs">
               <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Final Score</p>
               <div className="text-4xl font-black text-slate-900 dark:text-white">
-                {score} <span className="text-xl font-bold text-slate-400">/ 50</span>
+                {score} <span className="text-xl font-bold text-slate-400">/ {totalQuestions}</span>
               </div>
               <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                {Math.round((score / 50) * 100)}% Overall Accuracy
+                {Math.round((score / totalQuestions) * 100)}% Accuracy
               </p>
             </div>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
               <button
-                onClick={() => handleStartSubject(subjects.indexOf(selectedSubject))}
+                onClick={() => handleStartCustomMaterial(activeMaterial)}
                 className="w-full sm:w-auto px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md shadow-blue-500/20 active:scale-95 transition-all cursor-pointer"
               >
-                Retake {selectedSubject}
+                Retake Reviewer
               </button>
               <button
                 onClick={handleResetToMenu}
                 className="w-full sm:w-auto px-6 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-sm transition-all cursor-pointer"
               >
-                Choose Another Subject
+                Back to Reviewer Menu
               </button>
             </div>
           </div>
 
-          {/* Review Summary Breakdown of Mistakes */}
+          {/* Mistakes Breakdown */}
           <div className="pt-6 border-t border-slate-100 dark:border-slate-800 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
@@ -397,23 +511,34 @@ const ExamReviewer = () => {
             {wrongQuestions.length > 0 && (
               <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
                 {wrongQuestions.map((q, idx) => {
-                  const userChoiceIdx = savedAnswers[activeQuestions.indexOf(q)];
+                  const record = savedAnswers[activeMaterial.questions.indexOf(q)] || {};
                   return (
                     <div
                       key={idx}
                       className="p-4 rounded-2xl bg-rose-50/50 dark:bg-rose-950/20 border border-rose-200/80 dark:border-rose-900/60 space-y-2 text-left"
                     >
-                      <p className="text-xs font-bold text-slate-800 dark:text-slate-200 leading-snug">
+                      <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
                         <strong>Q:</strong> {q.q}
                       </p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
                         <div className="p-2 rounded-xl bg-rose-100/70 dark:bg-rose-900/40 text-rose-800 dark:text-rose-200 font-medium">
-                          <span className="font-bold">Your answer:</span> {q.a[userChoiceIdx] || 'None'}
+                          <span className="font-bold">Your answer:</span>{' '}
+                          {q.type === 'multiple_choice'
+                            ? q.a?.[record.choiceIndex] || 'None'
+                            : record.textAnswer || 'None'}
                         </div>
                         <div className="p-2 rounded-xl bg-emerald-100/70 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-200 font-bold">
-                          <span>Correct answer:</span> {String.fromCharCode(65 + q.c)}. {q.a[q.c]}
+                          <span>Correct answer:</span>{' '}
+                          {q.type === 'multiple_choice'
+                            ? `${String.fromCharCode(65 + q.c)}. ${q.a?.[q.c]}`
+                            : q.expectedAnswer || q.expectedItems?.join(', ')}
                         </div>
                       </div>
+                      {q.explanation && (
+                        <p className="text-[11px] text-slate-500 italic pt-1">
+                          💡 {q.explanation}
+                        </p>
+                      )}
                     </div>
                   );
                 })}
@@ -423,10 +548,10 @@ const ExamReviewer = () => {
         </div>
       )}
 
-      {/* VIEW 3: ACTIVE EXAM QUESTION INTERFACE */}
-      {selectedSubject && !isExamCompleted && (
+      {/* VIEW 3: ACTIVE TEST QUESTION INTERFACE */}
+      {activeMaterial && !isSessionCompleted && (
         <div className="bg-white/90 dark:bg-[#0f172a]/80 backdrop-blur-md rounded-3xl border border-slate-200/80 dark:border-slate-800/80 p-6 md:p-8 shadow-sm space-y-6">
-          {/* Top Bar with Subject, Score, and Back Button */}
+          {/* Top Bar with Subject, Timer, Score, and Back */}
           <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
             <button
               onClick={handleResetToMenu}
@@ -437,11 +562,23 @@ const ExamReviewer = () => {
             </button>
 
             <div className="flex items-center gap-3">
+              {timeLeft !== null && (
+                <div
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-black border ${
+                    timeLeft < 60
+                      ? 'bg-rose-50 text-rose-600 border-rose-200 animate-pulse'
+                      : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:border-amber-800'
+                  }`}
+                >
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>{formatTime(timeLeft)}</span>
+                </div>
+              )}
               <span className="text-xs font-extrabold px-3 py-1 rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
-                {selectedSubject}
+                {activeMaterial.subject}
               </span>
               <span className="text-xs font-bold px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
-                Score: <strong className="text-blue-600 dark:text-blue-400">{score}</strong> / 50
+                Score: <strong className="text-blue-600 dark:text-blue-400">{score}</strong> / {totalQuestions}
               </span>
             </div>
           </div>
@@ -450,10 +587,10 @@ const ExamReviewer = () => {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-black uppercase tracking-wider text-blue-600 dark:text-blue-400">
-                Question {questionNumber} of 50
+                Question {questionNumber} of {totalQuestions} ({currentQ.type.replace('_', ' ')})
               </span>
               <span className="text-xs text-slate-400 font-medium">
-                {50 - questionNumber} items remaining
+                {totalQuestions - questionNumber} items remaining
               </span>
             </div>
             <h2 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white leading-relaxed">
@@ -461,55 +598,97 @@ const ExamReviewer = () => {
             </h2>
           </div>
 
-          {/* Choices Buttons */}
-          <div className="space-y-3">
-            {currentQ.a?.map((choice, index) => {
-              const letter = String.fromCharCode(65 + index);
-              const isSelected = currentSelectedAnswer === index;
-              const isCorrectAnswer = index === currentQ.c;
+          {/* Multiple Choice Format */}
+          {currentQ.type === 'multiple_choice' && currentQ.a && (
+            <div className="space-y-3">
+              {currentQ.a.map((choice, index) => {
+                const letter = String.fromCharCode(65 + index);
+                const isSelected = currentAnswerRecord?.choiceIndex === index;
+                const isCorrectAnswer = index === currentQ.c;
 
-              let buttonStyle =
-                'bg-slate-50 dark:bg-slate-800/70 border-slate-200 dark:border-slate-700/80 text-slate-800 dark:text-slate-200 hover:bg-blue-50/70 dark:hover:bg-slate-750 hover:border-blue-400';
+                let buttonStyle =
+                  'bg-slate-50 dark:bg-slate-800/70 border-slate-200 dark:border-slate-700/80 text-slate-800 dark:text-slate-200 hover:bg-blue-50/70 dark:hover:bg-slate-750 hover:border-blue-400';
 
-              if (hasAnswered) {
-                if (isCorrectAnswer) {
-                  buttonStyle = 'bg-emerald-500 border-emerald-500 text-white font-bold shadow-md shadow-emerald-500/25';
-                } else if (isSelected && !isCorrectAnswer) {
-                  buttonStyle = 'bg-rose-500 border-rose-500 text-white font-bold shadow-md shadow-rose-500/25';
-                } else {
-                  buttonStyle = 'bg-slate-50/50 dark:bg-slate-800/30 border-slate-200/50 dark:border-slate-800 opacity-60 text-slate-400';
+                if (hasAnswered) {
+                  if (isCorrectAnswer) {
+                    buttonStyle =
+                      'bg-emerald-500 border-emerald-500 text-white font-bold shadow-md shadow-emerald-500/25';
+                  } else if (isSelected && !isCorrectAnswer) {
+                    buttonStyle =
+                      'bg-rose-500 border-rose-500 text-white font-bold shadow-md shadow-rose-500/25';
+                  } else {
+                    buttonStyle =
+                      'bg-slate-50/50 dark:bg-slate-800/30 border-slate-200/50 dark:border-slate-800 opacity-60 text-slate-400';
+                  }
                 }
-              }
 
-              return (
-                <button
-                  key={index}
-                  disabled={hasAnswered}
-                  onClick={() => handleSelectAnswer(index)}
-                  className={`w-full p-4 rounded-2xl border text-left flex items-start gap-3 transition-all cursor-pointer btn-interactive ${buttonStyle}`}
-                >
-                  <span
-                    className={`w-7 h-7 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 transition-transform ${
-                      hasAnswered && (isCorrectAnswer || isSelected)
-                        ? 'bg-white/20 text-white scale-110'
-                        : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200'
-                    }`}
+                return (
+                  <button
+                    key={index}
+                    disabled={hasAnswered}
+                    onClick={() => handleSelectChoice(index)}
+                    className={`w-full p-4 rounded-2xl border text-left flex items-start gap-3 transition-all cursor-pointer ${buttonStyle}`}
                   >
-                    {letter}
-                  </span>
-                  <span className="text-sm font-medium pt-0.5 leading-snug">{choice}</span>
-                </button>
-              );
-            })}
-          </div>
+                    <span
+                      className={`w-7 h-7 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 ${
+                        hasAnswered && (isCorrectAnswer || isSelected)
+                          ? 'bg-white/20 text-white scale-110'
+                          : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200'
+                      }`}
+                    >
+                      {letter}
+                    </span>
+                    <span className="text-sm font-medium pt-0.5 leading-snug">{choice}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Identification / Enumeration Format */}
+          {(currentQ.type === 'identification' || currentQ.type === 'enumeration') && (
+            <form onSubmit={handleSubmitIdentification} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                  Type your answer:
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    disabled={hasAnswered}
+                    value={identificationInput}
+                    onChange={(e) => setIdentificationInput(e.target.value)}
+                    placeholder="Ilagay ang iyong sagot dito..."
+                    className="flex-1 px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
+                  />
+                  {!hasAnswered && (
+                    <button
+                      type="submit"
+                      disabled={!identificationInput.trim()}
+                      className="px-6 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md transition-all disabled:opacity-50 cursor-pointer"
+                    >
+                      Submit Answer
+                    </button>
+                  )}
+                </div>
+              </div>
+            </form>
+          )}
 
           {/* Feedback Banner retaining exact original reactions */}
           {hasAnswered && (
             <div>
-              {currentSelectedAnswer === currentQ.c ? (
+              {currentAnswerRecord.isCorrect ? (
                 <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 font-extrabold text-sm flex items-center gap-2 animate-scale-in shadow-sm shadow-emerald-500/10">
                   <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                  <span>GALING AH, KUPAL!</span>
+                  <div>
+                    <p>GALING AH, KUPAL!</p>
+                    {currentQ.explanation && (
+                      <p className="text-xs font-normal text-emerald-700 dark:text-emerald-300 mt-0.5">
+                        💡 {currentQ.explanation}
+                      </p>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200 font-extrabold text-sm flex items-start gap-2 animate-wiggle shadow-sm shadow-rose-500/10">
@@ -517,8 +696,15 @@ const ExamReviewer = () => {
                   <div>
                     <p>ENGKK. ENGOT! ETO YUNG TAMA BOBO:</p>
                     <p className="mt-1 text-xs font-bold text-rose-900 dark:text-rose-100">
-                      {String.fromCharCode(65 + currentQ.c)}. {currentQ.a[currentQ.c]}
+                      {currentQ.type === 'multiple_choice'
+                        ? `${String.fromCharCode(65 + currentQ.c)}. ${currentQ.a[currentQ.c]}`
+                        : currentQ.expectedAnswer || currentQ.expectedItems?.join(', ')}
                     </p>
+                    {currentQ.explanation && (
+                      <p className="text-xs font-normal text-rose-700 dark:text-rose-300 mt-1">
+                        💡 {currentQ.explanation}
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
@@ -532,13 +718,24 @@ const ExamReviewer = () => {
                 onClick={handleNextQuestion}
                 className="flex items-center gap-2 px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md shadow-blue-500/25 active:scale-95 transition-all cursor-pointer"
               >
-                <span>{questionNumber >= 50 ? 'Finish Exam' : 'Next Question'}</span>
+                <span>{questionNumber >= totalQuestions ? 'Finish Exam' : 'Next Question'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           )}
         </div>
       )}
+
+      {/* Upload File Modal */}
+      <UploadMaterialModal
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        initialCategory={activeCategory}
+        onSuccess={(createdMaterial) => {
+          fetchMaterials();
+          handleStartCustomMaterial(createdMaterial);
+        }}
+      />
     </div>
   );
 };
