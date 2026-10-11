@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import client from '../api/client';
-import defaultQuestions from '../data/defaultExamQuestions.json';
 import { useOutletContext } from 'react-router-dom';
 import { useGlobalTasks } from '../context/GlobalTaskContext';
 import {
@@ -22,10 +21,35 @@ import {
   FileText,
   Trash2,
   Calendar,
+  Play,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
-const defaultSubjects = ['CC106', 'IAS101', 'PM101', 'ITE3', 'IM101', 'ITSP1C'];
+const PROGRESS_KEY_PREFIX = 'student_planner_exam_prog_';
+
+const getSavedProgress = (id) => {
+  if (!id) return null;
+  try {
+    const raw = localStorage.getItem(`${PROGRESS_KEY_PREFIX}${id}`);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
+};
+
+const saveProgress = (id, data) => {
+  if (!id) return;
+  try {
+    localStorage.setItem(`${PROGRESS_KEY_PREFIX}${id}`, JSON.stringify(data));
+  } catch (e) {}
+};
+
+const clearSavedProgress = (id) => {
+  if (!id) return;
+  try {
+    localStorage.removeItem(`${PROGRESS_KEY_PREFIX}${id}`);
+  } catch (e) {}
+};
 
 const ExamReviewer = () => {
   // Category Tab: 'quiz' | 'exam'
@@ -96,50 +120,30 @@ const ExamReviewer = () => {
     return arr;
   };
 
-  // Start Default Subject (Preset 50 items)
-  const handleStartDefaultSubject = (index) => {
-    const subj = defaultSubjects[index];
-    const startIndex = index * 50;
-    const rawSet = defaultQuestions.slice(startIndex, startIndex + 50);
+  // Start Custom Generated Material from DB with Progress Preservation
+  const handleStartCustomMaterial = (mat, restart = false) => {
+    if (!mat) return;
+    const existing = !restart ? getSavedProgress(mat._id) : null;
 
-    let preparedSet = rawSet.map((item, originalIdx) => ({
-      ...item,
-      type: 'multiple_choice',
-      originalNumber: originalIdx + 1,
-    }));
-
-    if (shuffleMode) {
-      preparedSet = shuffleArray(preparedSet).map((item) => {
-        const mappedChoices = item.a.map((choiceText, cIdx) => ({
-          text: choiceText,
-          isCorrect: cIdx === item.c,
-        }));
-        const shuffledChoices = shuffleArray(mappedChoices);
-        const newCorrectIndex = shuffledChoices.findIndex((c) => c.isCorrect);
-        return {
-          ...item,
-          a: shuffledChoices.map((c) => c.text),
-          c: newCorrectIndex,
-        };
-      });
+    if (existing && existing.currentQuestionIndex !== undefined) {
+      // Resume existing session exactly where user stopped!
+      setActiveMaterial(existing.material || mat);
+      setCurrentQuestionIndex(existing.currentQuestionIndex || 0);
+      setScore(existing.score || 0);
+      setSavedAnswers(existing.savedAnswers || {});
+      setIdentificationInput(existing.identificationInput || '');
+      setIsSessionCompleted(false);
+      setTimeLeft(
+        existing.timeLeft !== undefined
+          ? existing.timeLeft
+          : mat.hasTimer && mat.timerDurationSeconds
+          ? mat.timerDurationSeconds
+          : null
+      );
+      return;
     }
 
-    setActiveMaterial({
-      title: `${subj} Standard Set`,
-      subject: subj,
-      category: activeCategory,
-      questions: preparedSet,
-      hasTimer: false,
-    });
-    setCurrentQuestionIndex(0);
-    setScore(0);
-    setSavedAnswers({});
-    setIsSessionCompleted(false);
-    setTimeLeft(null);
-  };
-
-  // Start Custom Generated Material from DB
-  const handleStartCustomMaterial = (mat) => {
+    // Start fresh
     let preparedQs = [...mat.questions];
     if (shuffleMode) {
       preparedQs = shuffleArray(preparedQs).map((item) => {
@@ -170,13 +174,34 @@ const ExamReviewer = () => {
     setIdentificationInput('');
     setIsSessionCompleted(false);
     setTimeLeft(mat.hasTimer && mat.timerDurationSeconds ? mat.timerDurationSeconds : null);
+    if (mat._id) {
+      clearSavedProgress(mat._id);
+    }
   };
+
+  // Continuously persist active quiz/exam session so progress is NEVER lost
+  useEffect(() => {
+    if (activeMaterial?._id && !isSessionCompleted) {
+      saveProgress(activeMaterial._id, {
+        material: activeMaterial,
+        currentQuestionIndex,
+        savedAnswers,
+        score,
+        identificationInput,
+        timeLeft,
+        lastUpdated: Date.now(),
+      });
+    }
+  }, [activeMaterial, currentQuestionIndex, savedAnswers, score, timeLeft, identificationInput, isSessionCompleted]);
 
   // Automatically launch generated reviewer when background creation completes
   useEffect(() => {
     if (reviewerTask.generatedData) {
+      if (reviewerTask.generatedData.category && reviewerTask.generatedData.category !== activeCategory) {
+        setActiveCategory(reviewerTask.generatedData.category);
+      }
       fetchMaterials();
-      handleStartCustomMaterial(reviewerTask.generatedData);
+      handleStartCustomMaterial(reviewerTask.generatedData, true);
       setReviewerTask((prev) => ({
         ...prev,
         generatedData: null,
@@ -192,20 +217,26 @@ const ExamReviewer = () => {
     if (!window.confirm('Sigurado ka bang nais mong burahin ang reviewer na ito?')) return;
     try {
       await client.delete(`/reviewer/materials/${id}`);
+      clearSavedProgress(id);
       setMaterials((prev) => prev.filter((m) => m._id !== id));
     } catch (err) {
       console.error(err);
     }
   };
 
+  // Reset or discard in-progress session back to Question 1
+  const handleDiscardProgress = (e, matId) => {
+    e.stopPropagation();
+    if (window.confirm('Nais mo bang i-reset ang exam na ito at magsimula muli sa Question 1?')) {
+      clearSavedProgress(matId);
+      fetchMaterials();
+    }
+  };
+
+  // Back to Menu: keeps saved progress intact in localStorage
   const handleResetToMenu = () => {
     setActiveMaterial(null);
-    setCurrentQuestionIndex(0);
-    setScore(0);
-    setSavedAnswers({});
-    setIdentificationInput('');
     setIsSessionCompleted(false);
-    setTimeLeft(null);
     fetchMaterials();
   };
 
@@ -260,16 +291,15 @@ const ExamReviewer = () => {
     const nextIdx = currentQuestionIndex + 1;
     if (nextIdx >= activeMaterial.questions.length) {
       setIsSessionCompleted(true);
-      try {
-        confetti({ particleCount: 80, spread: 80, origin: { y: 0.5 } });
-      } catch (e) {}
-
-      // If custom material, update final score in DB
       if (activeMaterial._id) {
+        clearSavedProgress(activeMaterial._id);
         try {
           await client.put(`/reviewer/materials/${activeMaterial._id}/score`, { score });
         } catch (e) {}
       }
+      try {
+        confetti({ particleCount: 80, spread: 80, origin: { y: 0.5 } });
+      } catch (e) {}
     } else {
       setCurrentQuestionIndex(nextIdx);
     }
@@ -339,6 +369,53 @@ const ExamReviewer = () => {
       {/* VIEW 1: HOME / SELECTION MENU */}
       {!activeMaterial && (
         <div className="space-y-6">
+          {/* Active In-Progress Exam Resume Banner */}
+          {(() => {
+            const inProgMat = materials.find((m) => {
+              const p = getSavedProgress(m._id);
+              return p && p.currentQuestionIndex !== undefined;
+            });
+            if (!inProgMat) return null;
+            const p = getSavedProgress(inProgMat._id);
+
+            return (
+              <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-xl shadow-blue-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in duration-200">
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-0.5 rounded-full bg-white/20 text-[10px] font-black uppercase tracking-wider backdrop-blur-sm">
+                      May In-Progress Exam
+                    </span>
+                    <span className="text-xs text-blue-100 font-bold">
+                      Nakahinto sa Question {p.currentQuestionIndex + 1} of {inProgMat.questionCount}
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-black tracking-tight">{inProgMat.subject}</h3>
+                  <p className="text-xs text-blue-100/90 truncate max-w-lg">
+                    {inProgMat.title} • Kasalukuyang Score: {p.score} • Oras:{' '}
+                    {p.timeLeft !== null ? formatTime(p.timeLeft) : 'Off-time'}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => handleStartCustomMaterial(inProgMat)}
+                    className="px-5 py-2.5 rounded-xl bg-white text-blue-700 hover:bg-blue-50 font-black text-xs shadow-md transition-all active:scale-95 cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Play className="w-4 h-4 fill-current" />
+                    <span>Ipagpatuloy (Question {p.currentQuestionIndex + 1})</span>
+                  </button>
+                  <button
+                    onClick={(e) => handleDiscardProgress(e, inProgMat._id)}
+                    className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+                    title="Ulitin at magsimula sa Question 1"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Category Tabs: QUIZ vs EXAM */}
           <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-slate-200/60 dark:bg-slate-800/60 max-w-sm">
             <button
@@ -367,11 +444,16 @@ const ExamReviewer = () => {
           <div className="bg-white/90 dark:bg-[#0f172a]/80 backdrop-blur-md rounded-3xl border border-slate-200/80 dark:border-slate-800/80 p-6 md:p-8 shadow-sm space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-black text-slate-900 dark:text-white">
-                  My AI-Generated {activeCategory === 'quiz' ? 'Quizzes' : 'Exams'}
-                </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                  Reviewers generated and saved for your account.
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl font-black text-slate-900 dark:text-white">
+                    Aking {activeCategory === 'quiz' ? 'Quizzes' : 'Major Exams'}
+                  </h2>
+                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-300">
+                    {materials.length}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                  Lahat ng na-generate mong {activeCategory === 'quiz' ? 'quiz' : 'major exam'} reviewers mula sa iyong files.
                 </p>
               </div>
 
@@ -393,85 +475,117 @@ const ExamReviewer = () => {
               <p className="text-center text-xs text-slate-400 py-6">Loading materials...</p>
             ) : materials.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {materials.map((mat) => (
-                  <div
-                    key={mat._id}
-                    onClick={() => handleStartCustomMaterial(mat)}
-                    className="group relative p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 bg-slate-50/60 dark:bg-slate-800/40 hover:bg-gradient-to-tr hover:from-blue-600 hover:to-indigo-600 hover:text-white transition-all text-left shadow-2xs hover:shadow-lg hover:shadow-blue-500/20 cursor-pointer"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-md bg-white dark:bg-slate-700 group-hover:bg-white/20 group-hover:text-white text-slate-700 dark:text-slate-300">
-                        {mat.questionCount} Items
-                      </span>
-                      <button
-                        onClick={(e) => handleDeleteMaterial(e, mat._id)}
-                        className="p-1 rounded-md text-slate-400 hover:text-rose-500 group-hover:text-white/80 transition-colors"
-                        title="Delete reviewer"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+                {materials.map((mat) => {
+                  const progress = getSavedProgress(mat._id);
+                  const isInProgress = progress && progress.currentQuestionIndex !== undefined;
 
-                    <h3 className="text-base font-black text-slate-900 dark:text-white group-hover:text-white truncate">
-                      {mat.subject}
-                    </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 group-hover:text-white/80 truncate">
-                      {mat.title}
-                    </p>
+                  return (
+                    <div
+                      key={mat._id}
+                      onClick={() => handleStartCustomMaterial(mat)}
+                      className={`group relative p-5 rounded-2xl border transition-all text-left shadow-2xs hover:shadow-lg cursor-pointer ${
+                        isInProgress
+                          ? 'bg-blue-50/90 dark:bg-blue-950/40 border-blue-400 dark:border-blue-700 hover:border-blue-500 shadow-blue-500/10'
+                          : 'border-slate-200/80 dark:border-slate-700/80 bg-slate-50/60 dark:bg-slate-800/40 hover:bg-slate-100/80 dark:hover:bg-slate-800/70 hover:border-blue-400 dark:hover:border-blue-600'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-md bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300 shadow-2xs">
+                            {mat.questionCount} Items
+                          </span>
+                          {isInProgress && (
+                            <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-amber-500 text-white flex items-center gap-1 animate-pulse">
+                              <span>Huminto sa Q{progress.currentQuestionIndex + 1}</span>
+                            </span>
+                          )}
+                        </div>
 
-                    <div className="mt-3 pt-3 border-t border-slate-200/60 dark:border-slate-700/60 group-hover:border-white/20 flex items-center justify-between text-[11px] text-slate-400 group-hover:text-white/80">
-                      <span>{mat.hasTimer ? `⏱️ ${mat.timerDurationSeconds / 60}m` : '🌱 Off-time'}</span>
-                      {mat.lastScore !== null && <span>Best: {mat.lastScore}/{mat.questionCount}</span>}
+                        <div className="flex items-center gap-1">
+                          {isInProgress && (
+                            <button
+                              onClick={(e) => handleDiscardProgress(e, mat._id)}
+                              className="p-1 rounded-md text-slate-400 hover:text-amber-500 hover:bg-white dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                              title="I-reset pabalik sa Question 1"
+                            >
+                              <RotateCcw className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                          <button
+                            onClick={(e) => handleDeleteMaterial(e, mat._id)}
+                            className="p-1 rounded-md text-slate-400 hover:text-rose-500 hover:bg-white dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                            title="Delete reviewer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <h3 className="text-base font-black text-slate-900 dark:text-white truncate">
+                        {mat.subject}
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                        {mat.title}
+                      </p>
+
+                      <div className="mt-3 pt-3 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                        <span>
+                          {isInProgress ? (
+                            <span className="text-blue-600 dark:text-blue-400 font-extrabold flex items-center gap-1">
+                              <Play className="w-3 h-3 fill-current" />
+                              <span>Ipagpatuloy ang Exam</span>
+                            </span>
+                          ) : mat.hasTimer ? (
+                            `⏱️ ${mat.timerDurationSeconds / 60}m`
+                          ) : (
+                            '🌱 Off-time'
+                          )}
+                        </span>
+                        {isInProgress ? (
+                          <span className="font-extrabold text-amber-600 dark:text-amber-400">
+                            Score: {progress.score}
+                          </span>
+                        ) : (
+                          mat.lastScore !== null && (
+                            <span className="font-semibold text-slate-600 dark:text-slate-300">
+                              Best: {mat.lastScore}/{mat.questionCount}
+                            </span>
+                          )
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
-              <div className="p-8 text-center rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 space-y-2">
-                <FileText className="w-8 h-8 text-slate-400 mx-auto" />
-                <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
-                  Wala ka pang na-upload na review material para sa {activeCategory}.
-                </p>
-                <p className="text-xs text-slate-400">
-                  I-click ang <strong>"Upload File & Generate"</strong> sa taas para gumawa agad ang AI!
-                </p>
+              <div className="p-10 text-center rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-800 space-y-3">
+                <div className="w-12 h-12 mx-auto rounded-2xl bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                  <FileText className="w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-extrabold text-slate-800 dark:text-slate-200">
+                    Wala ka pang na-generate na {activeCategory === 'quiz' ? 'Quiz' : 'Major Exam'}.
+                  </h4>
+                  <p className="text-xs text-slate-400 max-w-sm mx-auto mt-1">
+                    Mag-upload ng PDF, DOCX, PPTX o notes at awtomatikong gagawa ang AI ng customized items para sa iyo.
+                  </p>
+                </div>
+                <button
+                  onClick={() =>
+                    setReviewerTask((prev) => ({
+                      ...prev,
+                      isOpen: true,
+                      isMinimized: false,
+                      category: activeCategory,
+                    }))
+                  }
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/20 active:scale-95 transition-all cursor-pointer"
+                >
+                  <Upload className="w-4 h-4" />
+                  <span>Mag-upload at Gumawa Ngayon</span>
+                </button>
               </div>
             )}
-          </div>
-
-          {/* Default Preset Subjects */}
-          <div className="bg-white/90 dark:bg-[#0f172a]/80 backdrop-blur-md rounded-3xl border border-slate-200/80 dark:border-slate-800/80 p-6 md:p-8 shadow-sm space-y-4">
-            <div>
-              <h2 className="text-lg font-black text-slate-900 dark:text-white">
-                Preset College Course Reviewers (50 Items Each)
-              </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                Standard comprehensive review questions for core subjects.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              {defaultSubjects.map((subj, index) => (
-                <button
-                  key={subj}
-                  onClick={() => handleStartDefaultSubject(index)}
-                  className="group p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 bg-slate-50/60 dark:bg-slate-800/40 hover:bg-gradient-to-r hover:from-blue-600 hover:to-indigo-600 hover:text-white transition-all text-left shadow-2xs hover:shadow-lg hover:shadow-blue-500/20 cursor-pointer"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-white dark:bg-slate-700 group-hover:bg-white/20 group-hover:text-white text-slate-700 dark:text-slate-300">
-                      50 Questions
-                    </span>
-                    <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-white group-hover:translate-x-1 transition-transform" />
-                  </div>
-                  <h3 className="text-lg font-black text-slate-900 dark:text-white group-hover:text-white">
-                    {subj}
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 group-hover:text-white/80 mt-1">
-                    Preset Set {index + 1}
-                  </p>
-                </button>
-              ))}
-            </div>
           </div>
         </div>
       )}
@@ -505,7 +619,7 @@ const ExamReviewer = () => {
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
               <button
-                onClick={() => handleStartCustomMaterial(activeMaterial)}
+                onClick={() => handleStartCustomMaterial(activeMaterial, true)}
                 className="w-full sm:w-auto px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md shadow-blue-500/20 active:scale-95 transition-all cursor-pointer"
               >
                 Retake Reviewer
