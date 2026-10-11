@@ -4,6 +4,26 @@ const User = require('../models/User');
 const DAILY_TOKEN_LIMIT = 50;
 
 /**
+ * Ensures a valid and available Gemini model is used.
+ * Automatically replaces obsolete models (gemini-2.5-flash, gemini-2.0-flash, gemini-1.5-flash) with gemini-3.8-flash.
+ */
+function getResolvedModelName() {
+  const envModel = process.env.GEMINI_MODEL;
+  if (
+    !envModel ||
+    envModel === 'gemini-2.5-flash' ||
+    envModel === 'gemini-2.0-flash' ||
+    envModel === 'gemini-1.5-flash' ||
+    envModel.includes('2.5') ||
+    envModel.includes('2.0') ||
+    envModel.includes('1.5')
+  ) {
+    return 'gemini-3.8-flash';
+  }
+  return envModel;
+}
+
+/**
  * Check and increment daily AI usage for a user.
  * Admin (kentfloyd02@gmail.com or role==='admin') has unlimited tokens.
  */
@@ -116,7 +136,7 @@ async function generateReviewQuestions({
   }
 
   const ai = new GoogleGenAI({ apiKey });
-  const modelName = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+  const modelName = getResolvedModelName();
 
   // Truncate overly long text (keep max ~35,000 characters to stay well within limits)
   const trimmedContext = (textContext || '').slice(0, 35000);
@@ -198,7 +218,7 @@ async function generateChatbotReply({ messages = [], userContext = {} }) {
   }
 
   const ai = new GoogleGenAI({ apiKey });
-  const modelName = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+  const modelName = getResolvedModelName();
 
   const systemInstruction = `
 You are a high-efficiency AI Study Assistant for the Student Task & Exam Management System.
@@ -240,7 +260,7 @@ async function parseScheduleWithGemini({ mimeType, fileBuffer, textContent }) {
   }
 
   const ai = new GoogleGenAI({ apiKey });
-  const modelName = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+  const modelName = getResolvedModelName();
 
   const systemInstruction = `
 You are an expert academic schedule analyzer and OCR system for students.
@@ -301,13 +321,11 @@ CRITICAL RULES:
     throw new Error('Walang naibigay na file data o text content para ma-scan.');
   }
 
-  // Model fallback list if Google has 503 temporary capacity spikes
+  // Model candidate list (ensures gemini-3.8-flash is always used and never crashes on 404/retired model)
   const candidateModels = [
     modelName,
-    'gemini-2.5-flash',
-    'gemini-2.0-flash',
-    'gemini-1.5-flash',
-  ];
+    'gemini-3.8-flash',
+  ].filter((v, i, a) => a.indexOf(v) === i);
 
   let response = null;
   let lastError = null;
@@ -324,19 +342,9 @@ CRITICAL RULES:
       if (response && response.text) break;
     } catch (err) {
       lastError = err;
-      const is503OrRateLimit =
-        err.status === 503 ||
-        err.message?.includes('503') ||
-        err.message?.includes('high demand') ||
-        err.message?.includes('UNAVAILABLE');
-
-      if (is503OrRateLimit) {
-        console.warn(`Model ${targetModel} experiencing high demand (503). Retrying with backup model...`);
-        // Small delay before backup model
-        await new Promise((r) => setTimeout(r, 600));
-        continue;
-      }
-      throw err;
+      console.warn(`Model ${targetModel} failed (${err.status || err.message}). Checking next candidate model...`);
+      await new Promise((r) => setTimeout(r, 600));
+      continue;
     }
   }
 
