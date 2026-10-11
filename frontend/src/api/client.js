@@ -7,7 +7,7 @@ const api = axios.create({
 // Request interceptor to inject JWT bearer token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('student_token');
+    const token = localStorage.getItem('student_token') || sessionStorage.getItem('student_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -23,6 +23,8 @@ api.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       localStorage.removeItem('student_token');
       localStorage.removeItem('student_user');
+      sessionStorage.removeItem('student_token');
+      sessionStorage.removeItem('student_user');
       if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
         window.location.href = '/login';
       }

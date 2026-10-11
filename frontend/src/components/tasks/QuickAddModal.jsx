@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import api from '../../api/client';
 import { X, Calendar, BookOpen, AlertCircle, Sparkles } from 'lucide-react';
 
+import { useOffline } from '../../context/OfflineContext';
+
 const QuickAddModal = ({ isOpen, onClose, onSuccess }) => {
+  const { isOnline, getCachedTasks, setCachedTasks, enqueueAction } = useOffline();
   const [title, setTitle] = useState('');
   const [subject, setSubject] = useState('');
   const [taskType, setTaskType] = useState('Assignment');
@@ -18,10 +21,12 @@ const QuickAddModal = ({ isOpen, onClose, onSuccess }) => {
 
   useEffect(() => {
     if (isOpen) {
-      // Fetch subjects for selector
-      api.get('/subjects')
-        .then((res) => setSubjectsList(res.data.data))
-        .catch((err) => console.error(err));
+      // Fetch subjects for selector if online
+      if (navigator.onLine) {
+        api.get('/subjects')
+          .then((res) => setSubjectsList(res.data.data))
+          .catch((err) => console.error(err));
+      }
     }
   }, [isOpen]);
 
@@ -37,18 +42,43 @@ const QuickAddModal = ({ isOpen, onClose, onSuccess }) => {
     setLoading(true);
     setError('');
 
+    const taskPayload = {
+      title,
+      subject: subject || null,
+      taskType,
+      academicPeriod,
+      priority,
+      deadline: deadline || null,
+      description,
+      estimatedMinutes: Number(estimatedMinutes) || 60,
+      status: 'To Do',
+    };
+
+    // If offline, create temporary task locally and enqueue
+    if (!navigator.onLine) {
+      const tempTask = {
+        ...taskPayload,
+        _id: 'offline_' + Date.now(),
+        createdAt: new Date().toISOString(),
+      };
+      const cached = getCachedTasks();
+      setCachedTasks([tempTask, ...cached]);
+      enqueueAction('CREATE_TASK', taskPayload);
+
+      setTitle('');
+      setDescription('');
+      setDeadline('');
+      setLoading(false);
+      onSuccess();
+      return;
+    }
+
     try {
-      await api.post('/tasks', {
-        title,
-        subject: subject || null,
-        taskType,
-        academicPeriod,
-        priority,
-        deadline: deadline || null,
-        description,
-        estimatedMinutes: Number(estimatedMinutes) || 60,
-        status: 'To Do',
-      });
+      const res = await api.post('/tasks', taskPayload);
+      if (res.data?.success) {
+        const cached = getCachedTasks();
+        setCachedTasks([res.data.data, ...cached]);
+      }
 
       // Reset
       setTitle('');
@@ -56,7 +86,20 @@ const QuickAddModal = ({ isOpen, onClose, onSuccess }) => {
       setDeadline('');
       onSuccess();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to create task');
+      // Fallback enqueue if network drops mid-request
+      const tempTask = {
+        ...taskPayload,
+        _id: 'offline_' + Date.now(),
+        createdAt: new Date().toISOString(),
+      };
+      const cached = getCachedTasks();
+      setCachedTasks([tempTask, ...cached]);
+      enqueueAction('CREATE_TASK', taskPayload);
+
+      setTitle('');
+      setDescription('');
+      setDeadline('');
+      onSuccess();
     } finally {
       setLoading(false);
     }

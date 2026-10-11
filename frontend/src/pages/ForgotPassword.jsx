@@ -16,6 +16,12 @@ const ForgotPassword = () => {
     setError('');
     setMessage('');
     setPreviewUrl('');
+
+    if (!navigator.onLine) {
+      setError('Nangangailangan ng Internet connection ang pagpapadala ng reset email via Brevo SMTP.');
+      return;
+    }
+
     setLoading(true);
 
     try {

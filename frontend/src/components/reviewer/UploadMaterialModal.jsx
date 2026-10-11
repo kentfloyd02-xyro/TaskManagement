@@ -49,6 +49,11 @@ const UploadMaterialModal = ({ isOpen, onClose, onSuccess, initialCategory = 'qu
       return;
     }
 
+    if (!navigator.onLine) {
+      setError('Nangangailangan ng Internet connection ang pag-upload at pag-generate ng AI questions gamit ang Gemini.');
+      return;
+    }
+
     setLoading(true);
     setError('');
 

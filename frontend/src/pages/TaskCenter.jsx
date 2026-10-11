@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import api from '../api/client';
+import { useOffline } from '../context/OfflineContext';
 import TaskDetailModal from '../components/tasks/TaskDetailModal';
 import {
   Kanban,
@@ -19,10 +20,11 @@ import { format } from 'date-fns';
 
 const TaskCenter = () => {
   const { refreshTrigger, triggerRefresh } = useOutletContext();
-  const [tasks, setTasks] = useState([]);
+  const { isOnline, getCachedTasks, setCachedTasks, enqueueAction } = useOffline();
+  const [tasks, setTasks] = useState(() => getCachedTasks());
   const [subjects, setSubjects] = useState([]);
   const [projects, setProjects] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   // Filters & Views
   const [currentView, setCurrentView] = useState('kanban'); // 'kanban' | 'list' | 'calendar'
@@ -46,10 +48,15 @@ const TaskCenter = () => {
         api.get('/projects'),
       ]);
       setTasks(tasksRes.data.data);
+      setCachedTasks(tasksRes.data.data);
       setSubjects(subjectsRes.data.data);
       setProjects(projectsRes.data.data);
     } catch (err) {
-      console.error('Failed to load tasks:', err);
+      console.warn('Failed to load online tasks, loading from offline cache:', err);
+      const local = getCachedTasks();
+      if (local && local.length > 0) {
+        setTasks(local);
+      }
     } finally {
       setLoading(false);
     }
@@ -57,29 +64,39 @@ const TaskCenter = () => {
 
   useEffect(() => {
     fetchAll();
-  }, [refreshTrigger]);
+  }, [refreshTrigger, isOnline]);
 
   // Status Change Logic (used for both Drag & Drop and Dropdown selector)
   const handleMoveStatus = async (taskId, newStatus) => {
+    // 1. Optimistic UI and local cache update
+    const updatedTasks = tasks.map((t) =>
+      t._id === taskId ? { ...t, status: newStatus } : t
+    );
+    setTasks(updatedTasks);
+    setCachedTasks(updatedTasks);
+
+    if (newStatus === 'Completed') {
+      try {
+        confetti({
+          particleCount: 45,
+          spread: 55,
+          origin: { y: 0.75 },
+        });
+      } catch (e) {}
+    }
+
+    // 2. If offline, enqueue mutation for auto-sync
+    if (!navigator.onLine) {
+      enqueueAction('UPDATE_TASK', { status: newStatus }, taskId);
+      return;
+    }
+
     try {
-      // Optimistic UI update
-      setTasks((prev) =>
-        prev.map((t) => (t._id === taskId ? { ...t, status: newStatus } : t))
-      );
-      if (newStatus === 'Completed') {
-        try {
-          confetti({
-            particleCount: 45,
-            spread: 55,
-            origin: { y: 0.75 },
-          });
-        } catch (e) {}
-      }
       await api.patch(`/tasks/${taskId}/status`, { status: newStatus });
       triggerRefresh();
     } catch (err) {
-      console.error('Failed to move task:', err);
-      fetchAll();
+      console.warn('Network issue while moving task, enqueued offline:', err);
+      enqueueAction('UPDATE_TASK', { status: newStatus }, taskId);
     }
   };
 

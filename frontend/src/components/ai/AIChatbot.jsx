@@ -119,6 +119,19 @@ const AIChatbot = () => {
     const cleanMsg = message.trim();
     if (!cleanMsg || loading) return;
 
+    if (!navigator.onLine) {
+      setMessages((prev) => [
+        ...prev,
+        { role: 'user', content: cleanMsg },
+        {
+          role: 'assistant',
+          content: '⚠️ Offline Mode: Nangangailangan ng Internet connection ang AI Study Assistant para makasagot.',
+        },
+      ]);
+      setMessage('');
+      return;
+    }
+
     if (!isSuperAdmin && aiUsage.remaining <= 0) {
       alert('Naubos mo na ang iyong 50 AI tokens para sa araw na ito. Mag-rereset ito bukas!');
       return;

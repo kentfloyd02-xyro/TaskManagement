@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import QuickAddModal from '../tasks/QuickAddModal';
 import AIChatbot from '../ai/AIChatbot';
+import OfflineBanner from '../common/OfflineBanner';
 
 const AppLayout = () => {
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
@@ -19,6 +20,7 @@ const AppLayout = () => {
 
       {/* Main Content Area */}
       <main className="flex-1 lg:pl-64 min-h-screen flex flex-col">
+        <OfflineBanner />
         <div className="flex-1 p-4 md:p-8 max-w-7xl w-full mx-auto">
           <Outlet context={{ refreshTrigger, triggerRefresh: () => setRefreshTrigger((p) => p + 1) }} />
         </div>
