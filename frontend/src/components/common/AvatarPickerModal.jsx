@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { BASE_AVATARS, ACCESSORIES, BG_GRADIENTS, parseAvatar, serializeAvatar } from '../../data/avatars';
 import UserAvatar from './UserAvatar';
-import { X, Check, Shuffle, Sparkles, User, Palette, Glasses } from 'lucide-react';
+import { X, Check, Shuffle, Sparkles, User, Palette, Glasses, Flame } from 'lucide-react';
 
 const AvatarPickerModal = ({ isOpen, onClose }) => {
   const { user, updateProfile } = useAuth();
@@ -14,7 +14,10 @@ const AvatarPickerModal = ({ isOpen, onClose }) => {
   const [selectedBg, setSelectedBg] = useState(initialConfig.bg);
 
   const [activeTab, setActiveTab] = useState('character'); // 'character' | 'accessories' | 'background'
-  const [genderFilter, setGenderFilter] = useState(user?.gender === 'female' ? 'female' : 'male');
+  const [accessoryCategory, setAccessoryCategory] = useState('All');
+  const [genderFilter, setGenderFilter] = useState(
+    initialConfig.base.startsWith('female') || user?.gender === 'female' ? 'female' : 'male'
+  );
   const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
@@ -58,18 +61,29 @@ const AvatarPickerModal = ({ isOpen, onClose }) => {
 
   const filteredBases = BASE_AVATARS.filter((b) => b.gender === genderFilter);
 
+  const accessoryCategories = ['All', 'Streetwear', 'Cyber', 'Anime', 'Gaming', 'Jewelry', 'Headwear', 'Eyewear'];
+  const filteredAccessories = accessoryCategory === 'All'
+    ? ACCESSORIES
+    : ACCESSORIES.filter((a) => a.category === accessoryCategory || a.id === 'none');
+
+  const currentBaseObj = BASE_AVATARS.find((b) => b.id === selectedBase) || BASE_AVATARS[0];
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-3xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-[#0c121e] border border-slate-200 dark:border-slate-800 rounded-3xl max-w-xl w-full max-h-[92vh] overflow-hidden flex flex-col shadow-2xl">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-transparent">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl">
-              <Sparkles className="w-5 h-5" />
+            <div className="p-2 bg-gradient-to-tr from-rose-500 to-indigo-600 text-white rounded-xl shadow-md">
+              <Flame className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white">Customize Your Avatar</h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Piliin ang iyong estilo, accessories at tema</p>
+              <h2 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                Maangas Avatar Studio <span className="text-xs px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-500 font-bold">PRO</span>
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Piliin ang iyong anime/streetwear character, accessories at cyber background
+              </p>
             </div>
           </div>
           <button
@@ -81,60 +95,70 @@ const AvatarPickerModal = ({ isOpen, onClose }) => {
         </div>
 
         {/* Content Body */}
-        <div className="p-6 overflow-y-auto space-y-6 flex-1">
+        <div className="p-5 md:p-6 overflow-y-auto space-y-5 flex-1">
           {/* Live Preview Box */}
-          <div className="flex flex-col items-center justify-center p-5 bg-gradient-to-b from-slate-50 to-slate-100/60 dark:from-slate-800/40 dark:to-slate-900/60 rounded-2xl border border-slate-200/60 dark:border-slate-700/60">
-            <UserAvatar avatarConfig={currentConfig} size="2xl" className="ring-4 ring-white dark:ring-slate-800 shadow-xl" />
-            <div className="mt-3 text-center">
-              <h3 className="font-bold text-slate-900 dark:text-white text-base">{user?.name || 'Student'}</h3>
-              <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
-                {BASE_AVATARS.find((b) => b.id === selectedBase)?.tag || 'Academic Explorer'}
+          <div className="relative overflow-hidden flex flex-col items-center justify-center p-5 bg-gradient-to-b from-slate-100/90 to-slate-200/50 dark:from-slate-900/90 dark:to-slate-950/80 rounded-3xl border border-slate-200 dark:border-slate-800">
+            <div className="relative">
+              <UserAvatar
+                avatarConfig={currentConfig}
+                size="2xl"
+                className="ring-4 ring-white/60 dark:ring-slate-700/60 shadow-2xl scale-105"
+              />
+            </div>
+
+            <div className="mt-3.5 text-center">
+              <h3 className="font-extrabold text-slate-900 dark:text-white text-base">
+                {currentBaseObj.name}
+              </h3>
+              <p className="text-xs font-bold text-rose-600 dark:text-rose-400 tracking-wide uppercase">
+                ⚡ {currentBaseObj.tag}
               </p>
             </div>
+
             <button
               onClick={handleRandomize}
               type="button"
-              className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs transition-all cursor-pointer"
+              className="mt-3 inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs transition-all cursor-pointer active:scale-95"
             >
-              <Shuffle className="w-3.5 h-3.5" />
+              <Shuffle className="w-3.5 h-3.5 text-rose-500" />
               <span>Randomize Look</span>
             </button>
           </div>
 
           {/* Navigation Tabs */}
-          <div className="grid grid-cols-3 gap-1 bg-slate-100 dark:bg-slate-800/70 p-1 rounded-2xl">
+          <div className="grid grid-cols-3 gap-1 bg-slate-100 dark:bg-slate-850 p-1 rounded-2xl">
             <button
               onClick={() => setActiveTab('character')}
-              className={`flex items-center justify-center gap-1.5 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+              className={`flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
                 activeTab === 'character'
                   ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               <User className="w-3.5 h-3.5" />
-              <span>Mukha & Buhok</span>
+              <span>Character Base</span>
             </button>
             <button
               onClick={() => setActiveTab('accessories')}
-              className={`flex items-center justify-center gap-1.5 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+              className={`flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
                 activeTab === 'accessories'
-                  ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs'
+                  ? 'bg-white dark:bg-slate-700 text-rose-600 dark:text-rose-400 shadow-xs'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               <Glasses className="w-3.5 h-3.5" />
-              <span>Accessories</span>
+              <span>Accessories ({ACCESSORIES.length})</span>
             </button>
             <button
               onClick={() => setActiveTab('background')}
-              className={`flex items-center justify-center gap-1.5 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+              className={`flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
                 activeTab === 'background'
-                  ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs'
+                  ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-xs'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               <Palette className="w-3.5 h-3.5" />
-              <span>Background</span>
+              <span>Backgrounds</span>
             </button>
           </div>
 
@@ -142,38 +166,40 @@ const AvatarPickerModal = ({ isOpen, onClose }) => {
           {activeTab === 'character' && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Pumili ng Karakter</span>
+                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">
+                  Pumili ng Maangas na Estilo ({filteredBases.length})
+                </span>
                 <div className="inline-flex rounded-xl bg-slate-100 dark:bg-slate-800 p-0.5">
                   <button
                     onClick={() => {
                       setGenderFilter('male');
-                      setSelectedBase('male-1');
+                      setSelectedBase('male-wolf');
                     }}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    className={`px-3 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
                       genderFilter === 'male'
-                        ? 'bg-blue-600 text-white shadow-2xs'
+                        ? 'bg-blue-600 text-white shadow-xs'
                         : 'text-slate-600 dark:text-slate-400'
                     }`}
                   >
-                    👨 Male
+                    👨 Male (8 Cuts)
                   </button>
                   <button
                     onClick={() => {
                       setGenderFilter('female');
-                      setSelectedBase('female-1');
+                      setSelectedBase('female-wolf');
                     }}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    className={`px-3 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
                       genderFilter === 'female'
-                        ? 'bg-pink-600 text-white shadow-2xs'
+                        ? 'bg-pink-600 text-white shadow-xs'
                         : 'text-slate-600 dark:text-slate-400'
                     }`}
                   >
-                    👩 Female
+                    👩 Female (8 Cuts)
                   </button>
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {filteredBases.map((b) => {
                   const isSelected = selectedBase === b.id;
                   return (
@@ -182,19 +208,21 @@ const AvatarPickerModal = ({ isOpen, onClose }) => {
                       onClick={() => setSelectedBase(b.id)}
                       className={`flex flex-col items-center p-3 rounded-2xl border transition-all text-center cursor-pointer ${
                         isSelected
-                          ? 'border-blue-500 bg-blue-50/60 dark:bg-blue-950/40 ring-2 ring-blue-500/30'
+                          ? 'border-blue-500 bg-blue-50/70 dark:bg-blue-950/50 ring-2 ring-blue-500/40 shadow-sm'
                           : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50'
                       }`}
                     >
                       <UserAvatar
                         avatarConfig={{ base: b.id, accessory: 'none', bg: selectedBg }}
-                        size="lg"
+                        size="md"
                         className="mb-2"
                       />
-                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate w-full">
+                      <span className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate w-full">
                         {b.name}
                       </span>
-                      <span className="text-[10px] text-slate-400 truncate w-full">{b.tag}</span>
+                      <span className="text-[10px] text-slate-400 truncate w-full font-medium">
+                        {b.tag}
+                      </span>
                     </button>
                   );
                 })}
@@ -205,24 +233,45 @@ const AvatarPickerModal = ({ isOpen, onClose }) => {
           {/* TAB 2: ACCESSORIES */}
           {activeTab === 'accessories' && (
             <div className="space-y-4">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                Accessories & Props
-              </span>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {ACCESSORIES.map((acc) => {
+              {/* Category Filter Pills */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                {accessoryCategories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setAccessoryCategory(cat)}
+                    className={`px-2.5 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all cursor-pointer ${
+                      accessoryCategory === cat
+                        ? 'bg-rose-600 text-white shadow-xs'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-72 overflow-y-auto pr-1">
+                {filteredAccessories.map((acc) => {
                   const isSelected = selectedAccessory === acc.id;
                   return (
                     <button
                       key={acc.id}
                       onClick={() => setSelectedAccessory(acc.id)}
-                      className={`flex items-center gap-3 p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                      className={`flex items-center gap-2.5 p-2.5 rounded-2xl border text-left transition-all cursor-pointer ${
                         isSelected
-                          ? 'border-blue-500 bg-blue-50/60 dark:bg-blue-950/40 ring-2 ring-blue-500/30 font-bold'
+                          ? 'border-rose-500 bg-rose-50/70 dark:bg-rose-950/40 ring-2 ring-rose-500/40 font-bold'
                           : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50'
                       }`}
                     >
-                      <span className="text-2xl">{acc.icon}</span>
-                      <span className="text-xs text-slate-800 dark:text-slate-200 font-semibold">{acc.name}</span>
+                      <span className="text-2xl shrink-0">{acc.icon}</span>
+                      <div className="min-w-0">
+                        <span className="text-xs text-slate-800 dark:text-slate-200 font-bold block truncate">
+                          {acc.name}
+                        </span>
+                        <span className="text-[10px] text-slate-400 block truncate">
+                          {acc.category}
+                        </span>
+                      </div>
                     </button>
                   );
                 })}
@@ -233,8 +282,8 @@ const AvatarPickerModal = ({ isOpen, onClose }) => {
           {/* TAB 3: BACKGROUND GRADIENTS */}
           {activeTab === 'background' && (
             <div className="space-y-4">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                Background Theme Colors
+              <span className="text-xs font-black text-slate-500 uppercase tracking-wider">
+                Cyber & Street Theme Palettes
               </span>
               <div className="grid grid-cols-2 gap-3">
                 {BG_GRADIENTS.map((g) => {
@@ -245,17 +294,24 @@ const AvatarPickerModal = ({ isOpen, onClose }) => {
                       onClick={() => setSelectedBg(g.id)}
                       className={`flex items-center gap-3 p-3 rounded-2xl border text-left transition-all cursor-pointer ${
                         isSelected
-                          ? 'border-blue-500 bg-blue-50/60 dark:bg-blue-950/40 ring-2 ring-blue-500/30'
+                          ? 'border-indigo-500 bg-indigo-50/70 dark:bg-indigo-950/40 ring-2 ring-indigo-500/40 font-bold'
                           : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50'
                       }`}
                     >
                       <div
-                        className="w-7 h-7 rounded-full shadow-inner border border-white/40 shrink-0"
+                        className="w-8 h-8 rounded-full shadow-md border-2 border-white/50 shrink-0"
                         style={{
                           background: `linear-gradient(135deg, ${g.from}, ${g.via}, ${g.to})`,
                         }}
                       />
-                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200">{g.name}</span>
+                      <div className="min-w-0">
+                        <span className="text-xs font-bold text-slate-900 dark:text-slate-100 block truncate">
+                          {g.name}
+                        </span>
+                        <span className="text-[10px] text-slate-400 block truncate font-medium">
+                          Atmospheric Glow
+                        </span>
+                      </div>
                     </button>
                   );
                 })}
@@ -265,7 +321,7 @@ const AvatarPickerModal = ({ isOpen, onClose }) => {
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900/80 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-3">
+        <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900/90 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-3">
           <button
             onClick={onClose}
             type="button"
@@ -277,7 +333,7 @@ const AvatarPickerModal = ({ isOpen, onClose }) => {
             onClick={handleSave}
             disabled={saving}
             type="button"
-            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/25 active:scale-95 disabled:opacity-50 transition-all cursor-pointer"
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold shadow-md shadow-blue-500/25 active:scale-95 disabled:opacity-50 transition-all cursor-pointer"
           >
             {saving ? (
               <span>Saving...</span>

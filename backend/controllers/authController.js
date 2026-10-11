@@ -33,7 +33,7 @@ exports.register = async (req, res) => {
     // Auto-promote Kentfloyd02@gmail.com to admin
     const role = email.toLowerCase() === 'kentfloyd02@gmail.com' ? 'admin' : 'student';
 
-    const defaultAvatar = gender === 'female' ? 'female-1' : 'male-1';
+    const defaultAvatar = gender === 'female' ? 'female-wolf' : 'male-wolf';
 
     const user = await User.create({
       name,
@@ -111,7 +111,7 @@ exports.login = async (req, res) => {
         role: user.role || (cleanEmail === 'kentfloyd02@gmail.com' ? 'admin' : 'student'),
         themePreference: user.themePreference,
         gender: user.gender || 'male',
-        avatar: user.avatar || (user.gender === 'female' ? 'female-1' : 'male-1'),
+        avatar: user.avatar || (user.gender === 'female' ? 'female-wolf' : 'male-wolf'),
       },
     });
   } catch (error) {
@@ -133,7 +133,7 @@ exports.getMe = async (req, res) => {
       success: true,
       user: {
         ...user.toObject(),
-        avatar: user.avatar || (user.gender === 'female' ? 'female-1' : 'male-1'),
+        avatar: user.avatar || (user.gender === 'female' ? 'female-wolf' : 'male-wolf'),
         gender: user.gender || 'male',
       },
     });
@@ -176,7 +176,7 @@ exports.updateProfile = async (req, res) => {
         course: user.course,
         yearLevel: user.yearLevel,
         gender: user.gender || 'male',
-        avatar: user.avatar || (user.gender === 'female' ? 'female-1' : 'male-1'),
+        avatar: user.avatar || (user.gender === 'female' ? 'female-wolf' : 'male-wolf'),
         themePreference: user.themePreference,
         role: user.role,
       },
