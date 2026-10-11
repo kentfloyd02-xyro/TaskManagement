@@ -16,9 +16,17 @@ async function extractTextFromFile(file) {
   }
 
   // 1. PDF
-  if (originalName.endsWith('.pdf')) {
-    const data = await pdfParse(buffer);
-    return data.text || '';
+  if (originalName.endsWith('.pdf') || (file.mimetype && file.mimetype.includes('pdf'))) {
+    if (typeof pdfParse === 'function') {
+      const data = await pdfParse(buffer);
+      return data.text || '';
+    } else if (pdfParse && typeof pdfParse.default === 'function') {
+      const data = await pdfParse.default(buffer);
+      return data.text || '';
+    } else {
+      console.warn('pdfParse is not a function, returning raw buffer string');
+      return buffer.toString('utf8');
+    }
   }
 
   // 2. Word (.docx)
