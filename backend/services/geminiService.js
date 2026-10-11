@@ -275,7 +275,12 @@ CRITICAL RULES:
 
   let parts = [{ text: systemInstruction }];
 
-  if (fileBuffer && mimeType && mimeType.startsWith('image/')) {
+  if (textContent && textContent.trim().length > 30) {
+    // If text was already extracted (e.g. from PDF, COR doc), pass directly as text — takes only 1-2 seconds!
+    parts.push({
+      text: `Analyze this text extracted from a school schedule / Certificate of Registration (COR) document:\n\n${textContent.slice(0, 25000)}`,
+    });
+  } else if (fileBuffer && mimeType && mimeType.startsWith('image/')) {
     parts.push({
       inlineData: {
         mimeType: mimeType,
@@ -284,7 +289,7 @@ CRITICAL RULES:
     });
     parts.push({ text: 'Analyze this schedule image and extract all subjects in the exact JSON schema.' });
   } else if (fileBuffer && mimeType === 'application/pdf') {
-    // If it's a PDF file
+    // If text extraction was empty (scanned image inside PDF), fall back to PDF inlineData
     parts.push({
       inlineData: {
         mimeType: 'application/pdf',
@@ -292,10 +297,6 @@ CRITICAL RULES:
       },
     });
     parts.push({ text: 'Analyze this PDF document and extract all class schedules in the exact JSON schema.' });
-  } else if (textContent) {
-    parts.push({
-      text: `Analyze this text extracted from a schedule document:\n\n${textContent.slice(0, 30000)}`,
-    });
   } else {
     throw new Error('Walang naibigay na file data o text content para ma-scan.');
   }

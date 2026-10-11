@@ -140,14 +140,19 @@ exports.scanScheduleAndExtract = async (req, res) => {
     let fileBuffer = req.file.buffer;
     let textContent = '';
 
-    // If document (docx, pptx, txt), extract text first
+    // If document (PDF, docx, pptx, txt), extract readable text first for lightning-fast parsing
     if (
+      mimeType.includes('pdf') ||
       mimeType.includes('word') ||
       mimeType.includes('presentation') ||
       mimeType.includes('text') ||
-      req.file.originalname.match(/\.(docx|pptx|txt)$/i)
+      req.file.originalname.match(/\.(pdf|docx|pptx|txt)$/i)
     ) {
-      textContent = await extractTextFromFile(req.file);
+      try {
+        textContent = await extractTextFromFile(req.file);
+      } catch (err) {
+        console.warn('PDF/Doc direct text extraction failed, falling back to buffer:', err.message);
+      }
     }
 
     const aiResult = await parseScheduleWithGemini({

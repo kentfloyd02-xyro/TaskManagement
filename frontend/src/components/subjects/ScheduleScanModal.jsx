@@ -51,16 +51,68 @@ const ScheduleScanModal = ({ isOpen, onClose, onSuccess }) => {
     if (selectedFile) processSelectedFile(selectedFile);
   };
 
-  const processSelectedFile = (selectedFile) => {
+  const compressImageIfNeeded = async (imageFile) => {
+    // Only compress if image is > 1MB
+    if (!imageFile.type.startsWith('image/') || imageFile.size < 1024 * 1024) {
+      return imageFile;
+    }
+
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        const maxDim = 1600; // Optimal high resolution for OCR without payload bloat
+
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => {
+            if (blob && blob.size < imageFile.size) {
+              const compressedFile = new File([blob], imageFile.name, {
+                type: 'image/jpeg',
+                lastModified: Date.now(),
+              });
+              resolve(compressedFile);
+            } else {
+              resolve(imageFile);
+            }
+          },
+          'image/jpeg',
+          0.85
+        );
+      };
+      img.onerror = () => resolve(imageFile);
+      img.src = URL.createObjectURL(imageFile);
+    });
+  };
+
+  const processSelectedFile = async (selectedFile) => {
     setErrorMessage('');
     setExtractedSubjects(null);
-    setFile(selectedFile);
 
     if (selectedFile.type.startsWith('image/')) {
       const url = URL.createObjectURL(selectedFile);
       setPreviewUrl(url);
+      const readyFile = await compressImageIfNeeded(selectedFile);
+      setFile(readyFile);
     } else {
       setPreviewUrl('');
+      setFile(selectedFile);
     }
   };
 
