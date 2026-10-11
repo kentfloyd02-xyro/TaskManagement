@@ -42,6 +42,10 @@ const chatRoomSchema = new mongoose.Schema(
       sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
       createdAt: { type: Date, default: Date.now },
     },
+    whiteboardData: {
+      type: String, // Base64 or serialized canvas strokes JSON
+      default: '',
+    },
   },
   {
     timestamps: true,

@@ -4,6 +4,7 @@ import socket from '../api/socket';
 import { useAuth } from '../context/AuthContext';
 import AddFriendModal from '../components/chat/AddFriendModal';
 import CreateGroupModal from '../components/chat/CreateGroupModal';
+import CollaborativeWhiteboard from '../components/chat/CollaborativeWhiteboard';
 import {
   Users,
   MessageSquare,
@@ -21,6 +22,7 @@ import {
   Sparkles,
   Download,
   AlertCircle,
+  Pencil,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -47,6 +49,7 @@ const StudyHub = () => {
   // Modals
   const [isAddFriendOpen, setIsAddFriendOpen] = useState(false);
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
+  const [isWhiteboardOpen, setIsWhiteboardOpen] = useState(false);
 
   // Search filter
   const [chatFilter, setChatFilter] = useState('');
@@ -484,7 +487,20 @@ const StudyHub = () => {
                   </p>
                 </div>
               </div>
+
+              {/* Right Action: Open Shared Whiteboard for Group Study */}
+              {activeRoom.isGroup && (
+                <button
+                  onClick={() => setIsWhiteboardOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold text-xs shadow-md shadow-blue-500/20 active:scale-95 transition-all cursor-pointer"
+                  title="Open Real-time Shared Whiteboard"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                  <span>Shared Whiteboard</span>
+                </button>
+              )}
             </div>
+
 
             {/* Messages Scroll Area */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
@@ -632,6 +648,16 @@ const StudyHub = () => {
           handleSelectRoom(newRoom);
         }}
       />
+
+      {/* Real-time Collaborative Whiteboard Modal */}
+      {activeRoom && (
+        <CollaborativeWhiteboard
+          isOpen={isWhiteboardOpen}
+          onClose={() => setIsWhiteboardOpen(false)}
+          roomId={activeRoom._id}
+          roomName={getRoomTitle(activeRoom)}
+        />
+      )}
     </div>
   );
 };

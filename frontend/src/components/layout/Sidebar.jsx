@@ -18,6 +18,7 @@ import {
   Sparkles,
   ShieldCheck,
   MessageSquare,
+  Calendar,
 } from 'lucide-react';
 
 const Sidebar = ({ onQuickAddClick }) => {
@@ -32,6 +33,7 @@ const Sidebar = ({ onQuickAddClick }) => {
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Task Board & Views', href: '/tasks', icon: CheckSquare },
+    { name: 'Class Schedule', href: '/schedule', icon: Calendar },
     { name: 'Study Hub & Chats', href: '/chats', icon: MessageSquare },
     { name: 'Subjects', href: '/subjects', icon: BookOpen },
     { name: 'Projects', href: '/projects', icon: FolderGit2 },

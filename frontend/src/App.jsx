@@ -16,6 +16,7 @@ import ResetPassword from './pages/ResetPassword';
 import ExamReviewer from './pages/ExamReviewer';
 import AdminPanel from './pages/AdminPanel';
 import StudyHub from './pages/StudyHub';
+import Schedule from './pages/Schedule';
 
 // Protected Route Guard
 const ProtectedRoute = ({ children }) => {
@@ -101,11 +102,12 @@ function App() {
             >
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/tasks" element={<TaskCenter />} />
+              <Route path="/schedule" element={<Schedule />} />
+              <Route path="/chats" element={<StudyHub />} />
               <Route path="/subjects" element={<Subjects />} />
               <Route path="/projects" element={<Projects />} />
               <Route path="/archive" element={<ArchiveVault />} />
               <Route path="/exam" element={<ExamReviewer />} />
-              <Route path="/chats" element={<StudyHub />} />
               <Route path="/admin" element={<AdminPanel />} />
               <Route path="/settings" element={<Settings />} />
             </Route>

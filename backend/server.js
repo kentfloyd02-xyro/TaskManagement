@@ -45,6 +45,15 @@ io.on('connection', (socket) => {
     socket.to(roomId).emit('user_stop_typing', { roomId });
   });
 
+  // Collaborative Whiteboard Real-Time Events
+  socket.on('whiteboard_draw', ({ roomId, drawData }) => {
+    socket.to(roomId).emit('whiteboard_draw_update', { roomId, drawData });
+  });
+
+  socket.on('whiteboard_clear', ({ roomId }) => {
+    socket.to(roomId).emit('whiteboard_cleared', { roomId });
+  });
+
   socket.on('disconnect', () => {});
 });
 
@@ -71,6 +80,9 @@ app.use('/api/reviewer', require('./routes/reviewerRoutes'));
 app.use('/api/chatbot', require('./routes/chatbotRoutes'));
 app.use('/api/friends', require('./routes/friendRoutes'));
 app.use('/api/chat', require('./routes/chatRoutes'));
+app.use('/api/schedule', require('./routes/scheduleRoutes'));
+app.use('/api/gamification', require('./routes/gamificationRoutes'));
+
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

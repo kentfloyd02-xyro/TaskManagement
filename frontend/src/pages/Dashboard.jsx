@@ -3,6 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import api from '../api/client';
 import AcademicPeriodBars from '../components/tasks/AcademicPeriodBars';
 import TaskDetailModal from '../components/tasks/TaskDetailModal';
+import GamificationWidget from '../components/gamification/GamificationWidget';
 import {
   Clock,
   AlertCircle,
@@ -135,6 +136,9 @@ const Dashboard = () => {
 
       {/* Prelim / Midterm / Finals Progress Taskbars */}
       <AcademicPeriodBars periods={summary?.periods} />
+
+      {/* Gamification: Daily Study Streaks, Badges, & Friends Leaderboard */}
+      <GamificationWidget />
 
       {/* Key Metric Quick Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

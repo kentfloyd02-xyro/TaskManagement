@@ -68,6 +68,47 @@ const userSchema = new mongoose.Schema(
         ref: 'User',
       },
     ],
+    // Gamification: Streaks & Badges (No XP)
+    streak: {
+      currentStreak: {
+        type: Number,
+        default: 1,
+      },
+      lastActiveDate: {
+        type: String,
+        default: () => new Date().toISOString().slice(0, 10),
+      },
+      bestStreak: {
+        type: Number,
+        default: 1,
+      },
+    },
+    badges: [
+      {
+        id: String,
+        name: String,
+        description: String,
+        icon: String,
+        unlockedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+    // Web Push Notification Subscriptions for phone & desktop alerts
+    pushSubscriptions: [
+      {
+        endpoint: String,
+        keys: {
+          p256dh: String,
+          auth: String,
+        },
+        subscribedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
   },
   {
     timestamps: true,

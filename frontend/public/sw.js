@@ -66,3 +66,60 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
+
+// Real Phone & Desktop Web Push Notification Event Listener
+self.addEventListener('push', (event) => {
+  let data = {
+    title: 'Student Planner Reminder',
+    body: 'You have an upcoming academic activity!',
+    icon: '/logo.png',
+    badge: '/logo.png',
+    url: '/schedule',
+  };
+
+  try {
+    if (event.data) {
+      data = event.data.json();
+    }
+  } catch (e) {
+    if (event.data) {
+      data.body = event.data.text();
+    }
+  }
+
+  const options = {
+    body: data.body,
+    icon: data.icon || '/logo.png',
+    badge: data.badge || '/logo.png',
+    vibrate: [200, 100, 200],
+    data: {
+      url: data.url || '/dashboard',
+    },
+    actions: [
+      { action: 'open', title: 'Open Planner' },
+      { action: 'close', title: 'Dismiss' },
+    ],
+  };
+
+  event.waitUntil(self.registration.showNotification(data.title, options));
+});
+
+// Click listener to bring phone user directly to planner page
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const urlToOpen = event.notification.data?.url || '/schedule';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      for (let client of windowClients) {
+        if (client.url.includes(urlToOpen) && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen);
+      }
+    })
+  );
+});
+
