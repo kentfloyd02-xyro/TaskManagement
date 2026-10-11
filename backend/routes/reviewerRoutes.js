@@ -138,9 +138,21 @@ router.post('/generate', protect, upload.single('file'), async (req, res) => {
     });
   } catch (err) {
     console.error('[Reviewer Generate Error]', err);
-    res.status(500).json({
+    let errorMsg = err.message || 'Error processing file and generating questions.';
+    try {
+      const parsed = JSON.parse(errorMsg);
+      if (parsed.error?.message) {
+        errorMsg = parsed.error.message;
+      }
+    } catch (_) {}
+
+    if (errorMsg.includes('503') || errorMsg.includes('high demand') || errorMsg.includes('UNAVAILABLE')) {
+      errorMsg = 'Kasalukuyang mataas ang server traffic ni Google AI (Spike in demand). Paki-click lang muli ang Generate.';
+    }
+
+    res.status(err.status || 500).json({
       success: false,
-      message: err.message || 'Error processing file and generating questions.',
+      message: errorMsg,
     });
   }
 });

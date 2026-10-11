@@ -23,6 +23,71 @@ function getResolvedModelName() {
   return envModel;
 }
 
+const FLASH_MODELS = ['gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-3.5-flash'];
+
+/**
+ * Robust content generation wrapper that handles temporary 503 spikes,
+ * rate limits, and model changes across Google's Gemini cluster.
+ */
+async function generateContentWithFallback(ai, { contents, config = {}, primaryModel }) {
+  const resolvedPrimary = getResolvedModelName();
+  const models = [
+    primaryModel || resolvedPrimary,
+    ...FLASH_MODELS,
+  ].filter((v, i, a) => Boolean(v) && a.indexOf(v) === i);
+
+  let lastError = null;
+
+  for (const model of models) {
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const response = await ai.models.generateContent({
+          model,
+          contents,
+          config,
+        });
+        if (response && response.text) {
+          return response;
+        }
+      } catch (err) {
+        lastError = err;
+        const errMsg = err.message || '';
+        const isSpike =
+          err.status === 503 ||
+          errMsg.includes('503') ||
+          errMsg.includes('high demand') ||
+          errMsg.includes('UNAVAILABLE') ||
+          errMsg.includes('RESOURCE_EXHAUSTED');
+
+        console.warn(`[Gemini API] Model ${model} (attempt ${attempt}/2) failed: ${errMsg.slice(0, 100)}`);
+
+        if (isSpike && attempt === 1) {
+          // Wait 1.2s before retry on the same model
+          await new Promise((r) => setTimeout(r, 1200));
+          continue;
+        }
+        // Move to next candidate model in the chain
+        break;
+      }
+    }
+  }
+
+  let cleanMsg = 'Kasalukuyang mataas ang demand sa Google AI servers. Pakisubukan muli makalipas ang ilang sandali.';
+  if (lastError?.message) {
+    try {
+      const parsed = JSON.parse(lastError.message);
+      if (parsed.error?.message) {
+        cleanMsg = parsed.error.message;
+      }
+    } catch (_) {
+      cleanMsg = lastError.message;
+    }
+  }
+  const finalError = new Error(cleanMsg);
+  finalError.status = lastError?.status || 503;
+  throw finalError;
+}
+
 /**
  * Check and increment daily AI usage for a user.
  * Admin (kentfloyd02@gmail.com or role==='admin') has unlimited tokens.
@@ -171,8 +236,8 @@ STUDY MATERIAL:
 ${trimmedContext}
 `;
 
-  const response = await ai.models.generateContent({
-    model: modelName,
+  const response = await generateContentWithFallback(ai, {
+    primaryModel: modelName,
     contents: prompt,
     config: {
       temperature: 0.3,
@@ -240,8 +305,8 @@ STRICT RESPONSE RULES:
     })),
   ];
 
-  const response = await ai.models.generateContent({
-    model: modelName,
+  const response = await generateContentWithFallback(ai, {
+    primaryModel: modelName,
     contents: contents,
   });
 
@@ -321,36 +386,13 @@ CRITICAL RULES:
     throw new Error('Walang naibigay na file data o text content para ma-scan.');
   }
 
-  // Model candidate list (ensures gemini-3.8-flash is always used and never crashes on 404/retired model)
-  const candidateModels = [
-    modelName,
-    'gemini-3.8-flash',
-  ].filter((v, i, a) => a.indexOf(v) === i);
-
-  let response = null;
-  let lastError = null;
-
-  for (const targetModel of candidateModels) {
-    try {
-      response = await ai.models.generateContent({
-        model: targetModel,
-        contents: parts,
-        config: {
-          temperature: 0.1,
-        },
-      });
-      if (response && response.text) break;
-    } catch (err) {
-      lastError = err;
-      console.warn(`Model ${targetModel} failed (${err.status || err.message}). Checking next candidate model...`);
-      await new Promise((r) => setTimeout(r, 600));
-      continue;
-    }
-  }
-
-  if (!response || !response.text) {
-    throw lastError || new Error('Hindi makakuha ng sagot mula sa AI server. Pakisubukan muli.');
-  }
+  const response = await generateContentWithFallback(ai, {
+    primaryModel: modelName,
+    contents: parts,
+    config: {
+      temperature: 0.1,
+    },
+  });
 
   const responseText = response.text || '';
   const cleaned = responseText
