@@ -86,9 +86,23 @@ A full-featured student task and academic term management system built with Mong
 
 ---
 
+Sa iPhone (iOS):
+Buksan ang live link sa Safari.
+Pindutin ang Share button (yung icon na may square at arrow pataas).
+Piliin ang "Add to Home Screen".
+Magkakaroon na ito ng sariling app icon sa iPhone mo, bubukas nang full-screen (walang browser search bar), at gagana offline!
+Sa Android Phone:
+Buksan sa Chrome.
+May lalabas na prompt na "Add Student Planner to Home screen" o pindutin ang 3 dots ➔ "Install app".
+Sa Windows PC / Laptop:
+Sa browser address bar ng Chrome/Edge, may lalabas na maliit na "Install" icon sa kanang dulo.
+Pag na-install, magkakaroon ito ng sariling icon sa Start Menu at Desktop mo na bumubukas na parang tunay na desktop program!
+
 ## Default API Endpoints
 - **Auth**: `/api/auth/register`, `/api/auth/login`, `/api/auth/me`, `/api/auth/forgot-password`, `/api/auth/reset-password/:token`
 - **Analytics**: `/api/analytics/dashboard-summary`
 - **Tasks**: `/api/tasks`, `/api/tasks/:id/status`, `/api/tasks/:id/checklist`, `/api/tasks/:id/attachments`, `/api/tasks/:id/archive`
 - **Subjects**: `/api/subjects`, `/api/subjects/:id/archive`
 - **Projects**: `/api/projects`, `/api/projects/:id/archive`
+
+

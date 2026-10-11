@@ -51,9 +51,11 @@ const Sidebar = ({ onQuickAddClick }) => {
       {/* Mobile Top Header */}
       <div className="lg:hidden flex items-center justify-between bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 px-4 py-3 sticky top-0 z-40 shadow-xs">
         <div className="flex items-center gap-2.5">
-          <div className="bg-gradient-to-tr from-blue-600 to-indigo-600 text-white p-2 rounded-xl shadow-md shadow-blue-500/20">
-            <GraduationCap className="w-5 h-5" />
-          </div>
+          <img
+            src="/logo.png"
+            alt="Student Planner Logo"
+            className="w-8 h-8 rounded-xl object-cover shadow-md shadow-blue-500/20"
+          />
           <span className="font-bold text-slate-900 dark:text-white text-base tracking-tight">Student Planner</span>
         </div>
         <div className="flex items-center gap-2">
@@ -91,9 +93,11 @@ const Sidebar = ({ onQuickAddClick }) => {
         <div>
           {/* Logo Brand */}
           <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-100 dark:border-slate-800/60">
-            <div className="bg-gradient-to-tr from-blue-600 to-indigo-600 text-white p-2.5 rounded-2xl shadow-lg shadow-blue-500/25 ring-4 ring-blue-500/10">
-              <GraduationCap className="w-6 h-6" />
-            </div>
+            <img
+              src="/logo.png"
+              alt="Student Planner Logo"
+              className="w-10 h-10 rounded-2xl object-cover shadow-lg shadow-blue-500/25 ring-2 ring-blue-500/20"
+            />
             <div>
               <h1 className="font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">Student Planner</h1>
               <p className="text-[11px] font-medium text-blue-600 dark:text-blue-400 flex items-center gap-1">

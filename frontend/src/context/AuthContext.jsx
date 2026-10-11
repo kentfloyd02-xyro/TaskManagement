@@ -38,6 +38,19 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const verifyUser = async () => {
       if (token) {
+        // If offline, trust local saved session instead of logging out
+        if (!navigator.onLine) {
+          const cachedUser =
+            localStorage.getItem('student_user') || sessionStorage.getItem('student_user');
+          if (cachedUser) {
+            try {
+              setUser(JSON.parse(cachedUser));
+            } catch (e) {}
+          }
+          setLoading(false);
+          return;
+        }
+
         try {
           const res = await api.get('/auth/me');
           if (res.data.success) {
@@ -46,14 +59,23 @@ export const AuthProvider = ({ children }) => {
               userData.role = 'admin';
             }
             setUser(userData);
-            localStorage.setItem('student_user', JSON.stringify(userData));
+            if (localStorage.getItem('student_token')) {
+              localStorage.setItem('student_user', JSON.stringify(userData));
+            } else if (sessionStorage.getItem('student_token')) {
+              sessionStorage.setItem('student_user', JSON.stringify(userData));
+            }
             if (userData.themePreference) {
               setTheme(userData.themePreference);
             }
           }
         } catch (err) {
-          console.error('Session verify failed:', err);
-          logout();
+          // Only log out if specifically a 401 Unauthorized, not on network connection errors
+          if (err.response && err.response.status === 401) {
+            console.error('Session verify unauthorized, logging out');
+            logout();
+          } else {
+            console.warn('Network issue during session verify, keeping offline session:', err);
+          }
         }
       }
       setLoading(false);
@@ -63,6 +85,38 @@ export const AuthProvider = ({ children }) => {
   }, [token]);
 
   const login = async (email, password, rememberMe = false) => {
+    // OFFLINE LOGIN SUPPORT: If offline, check against previously remembered user credentials/profile
+    if (!navigator.onLine) {
+      const offlineProfiles = JSON.parse(localStorage.getItem('offline_saved_accounts') || '[]');
+      const matched = offlineProfiles.find(
+        (acc) => acc.email.toLowerCase() === email.trim().toLowerCase()
+      );
+
+      if (matched) {
+        const dummyToken = matched.token || 'offline_cached_token_' + Date.now();
+        const userData = matched.user;
+
+        setToken(dummyToken);
+        setUser(userData);
+
+        const storage = rememberMe ? localStorage : sessionStorage;
+        storage.setItem('student_token', dummyToken);
+        storage.setItem('student_user', JSON.stringify(userData));
+
+        return { success: true, user: userData, token: dummyToken, isOffline: true };
+      } else {
+        throw {
+          response: {
+            data: {
+              message:
+                'Offline Mode: Walang naka-save na offline profile para sa email na ito. Kailangan muna mag-login nang may internet kahit isang beses sa device na ito.',
+            },
+          },
+        };
+      }
+    }
+
+    // ONLINE LOGIN
     const res = await api.post('/auth/login', { email, password });
     if (res.data.success) {
       const userData = res.data.user;
@@ -82,6 +136,19 @@ export const AuthProvider = ({ children }) => {
       const storage = rememberMe ? localStorage : sessionStorage;
       storage.setItem('student_token', res.data.token);
       storage.setItem('student_user', JSON.stringify(userData));
+
+      // Cache account in offline accounts pool so user can log in offline anytime!
+      const offlineProfiles = JSON.parse(localStorage.getItem('offline_saved_accounts') || '[]');
+      const filtered = offlineProfiles.filter(
+        (acc) => acc.email.toLowerCase() !== userData.email.toLowerCase()
+      );
+      filtered.push({
+        email: userData.email.toLowerCase(),
+        token: res.data.token,
+        user: userData,
+        cachedAt: Date.now(),
+      });
+      localStorage.setItem('offline_saved_accounts', JSON.stringify(filtered));
 
       if (userData.themePreference) {
         setTheme(userData.themePreference);

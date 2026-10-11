@@ -33,8 +33,12 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center p-4 bg-slate-50 dark:bg-slate-950">
       <div className="max-w-md w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 shadow-xl space-y-6 animate-in fade-in zoom-in-95 duration-200">
         <div className="text-center space-y-2">
-          <div className="inline-flex p-3 bg-blue-600 text-white rounded-2xl shadow-lg shadow-blue-500/25 mb-1">
-            <GraduationCap className="w-8 h-8" />
+          <div className="inline-flex p-1 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-3xl shadow-xl shadow-blue-500/25 mb-1 ring-4 ring-blue-500/10">
+            <img
+              src="/logo.png"
+              alt="Logo"
+              className="w-16 h-16 rounded-2xl object-cover"
+            />
           </div>
           <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
             Welcome to Student Planner
