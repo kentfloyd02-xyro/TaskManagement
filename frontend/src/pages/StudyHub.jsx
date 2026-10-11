@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import AddFriendModal from '../components/chat/AddFriendModal';
 import CreateGroupModal from '../components/chat/CreateGroupModal';
 import CollaborativeWhiteboard from '../components/chat/CollaborativeWhiteboard';
+import UserAvatar from '../components/common/UserAvatar';
 import {
   Users,
   MessageSquare,
@@ -396,9 +397,7 @@ const StudyHub = () => {
                 className="p-3 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800/60 flex items-center justify-between gap-3 transition-colors"
               >
                 <div className="flex items-center gap-3 truncate">
-                  <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
-                    {friend.name?.charAt(0).toUpperCase()}
-                  </div>
+                  <UserAvatar user={friend} size="sm" />
                   <div className="truncate">
                     <h4 className="font-bold text-xs text-slate-900 dark:text-white truncate">
                       {friend.name}
@@ -438,9 +437,7 @@ const StudyHub = () => {
                     className="p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-2"
                   >
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-blue-600 text-white font-bold text-xs flex items-center justify-center">
-                        {req.sender?.name?.charAt(0).toUpperCase()}
-                      </div>
+                      <UserAvatar user={req.sender} size="sm" />
                       <div className="truncate">
                         <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
                           {req.sender?.name}
@@ -533,9 +530,7 @@ const StudyHub = () => {
                     }`}
                   >
                     {!isMine && (
-                      <div className="w-7 h-7 rounded-xl bg-indigo-600 text-white font-bold text-[11px] flex items-center justify-center shrink-0">
-                        {m.sender?.name?.charAt(0).toUpperCase()}
-                      </div>
+                      <UserAvatar user={m.sender} size="xs" className="shrink-0 mt-0.5" />
                     )}
 
                     <div

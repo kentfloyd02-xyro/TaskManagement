@@ -20,13 +20,19 @@ import {
   MessageSquare,
   Calendar,
   Download,
+  Smile,
 } from 'lucide-react';
+import UserAvatar from '../common/UserAvatar';
+import AvatarPickerModal from '../common/AvatarPickerModal';
+import InstallAppModal from '../common/InstallAppModal';
 
 const Sidebar = ({ onQuickAddClick }) => {
   const { user, logout, theme, toggleTheme } = useAuth();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [canInstall, setCanInstall] = useState(!!window.deferredPrompt);
+  const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false);
+  const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
 
   React.useEffect(() => {
     const handleInstallReady = () => setCanInstall(true);
@@ -41,17 +47,20 @@ const Sidebar = ({ onQuickAddClick }) => {
 
   const handleInstallApp = async () => {
     const promptEvent = window.deferredPrompt;
-    if (!promptEvent) {
-      alert(
-        'Upang i-install ang app sa Android o PC:\n\n1. Sa Chrome/Edge sa PC: I-click ang install icon sa address bar sa bandang kanan.\n2. Sa Android (Chrome): Pindutin ang tatlong tuldok (⋮) sa taas at piliin ang "Install App" o "Add to Home screen".'
-      );
-      return;
-    }
-    promptEvent.prompt();
-    const result = await promptEvent.userChoice;
-    if (result.outcome === 'accepted') {
-      setCanInstall(false);
-      window.deferredPrompt = null;
+    if (promptEvent) {
+      try {
+        promptEvent.prompt();
+        const result = await promptEvent.userChoice;
+        if (result.outcome === 'accepted') {
+          setCanInstall(false);
+          window.deferredPrompt = null;
+        }
+      } catch (e) {
+        setIsInstallModalOpen(true);
+      }
+    } else {
+      // Browser didn't provide prompt or manual instructions needed
+      setIsInstallModalOpen(true);
     }
   };
 
@@ -92,6 +101,13 @@ const Sidebar = ({ onQuickAddClick }) => {
           <span className="font-bold text-slate-900 dark:text-white text-base tracking-tight">Student Planner</span>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsAvatarPickerOpen(true)}
+            className="p-0.5 rounded-full hover:ring-2 hover:ring-blue-500 transition-all cursor-pointer"
+            title="I-customize ang iyong Avatar"
+          >
+            <UserAvatar user={user} size="sm" />
+          </button>
           <button
             onClick={toggleTheme}
             className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300"
@@ -222,19 +238,22 @@ const Sidebar = ({ onQuickAddClick }) => {
               <LogOut className="w-4 h-4" />
             </button>
           </div>
-          <div className="flex items-center gap-3 bg-white dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-700/60 shadow-2xs">
-            <div
-              className={`w-9 h-9 rounded-xl text-white font-bold flex items-center justify-center text-sm shadow-xs ${
-                isAdmin
-                  ? 'bg-gradient-to-tr from-amber-500 to-orange-500 ring-2 ring-amber-500/30'
-                  : 'bg-gradient-to-tr from-blue-500 to-indigo-600'
-              }`}
-            >
-              {user?.name?.charAt(0).toUpperCase() || 'U'}
+
+          {/* Interactive Profile Card with 3D Avatar */}
+          <div
+            onClick={() => setIsAvatarPickerOpen(true)}
+            title="I-click para i-customize ang iyong Avatar"
+            className="flex items-center gap-3 bg-white dark:bg-slate-800/70 p-2.5 rounded-2xl border border-slate-200/80 dark:border-slate-700/70 shadow-xs hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50/30 dark:hover:bg-slate-800 group transition-all cursor-pointer"
+          >
+            <div className="relative">
+              <UserAvatar user={user} size="md" className="group-hover:scale-105 transition-transform" />
+              <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-blue-600 text-white flex items-center justify-center text-[9px] shadow-xs ring-1 ring-white dark:ring-slate-800 group-hover:bg-indigo-600">
+                ✏️
+              </span>
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
-                <p className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">
+                <p className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                   {user?.name || 'Student'}
                 </p>
                 {isAdmin && (
@@ -250,6 +269,20 @@ const Sidebar = ({ onQuickAddClick }) => {
           </div>
         </div>
       </aside>
+
+      {/* Avatar Customizer Modal */}
+      <AvatarPickerModal
+        isOpen={isAvatarPickerOpen}
+        onClose={() => setIsAvatarPickerOpen(false)}
+      />
+
+      {/* PWA Install Guide Modal */}
+      <InstallAppModal
+        isOpen={isInstallModalOpen}
+        onClose={() => setIsInstallModalOpen(false)}
+        promptInstall={handleInstallApp}
+        canPrompt={canInstall}
+      />
     </>
   );
 };

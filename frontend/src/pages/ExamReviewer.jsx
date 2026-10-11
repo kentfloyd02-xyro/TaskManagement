@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import client from '../api/client';
 import { useOutletContext } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { useGlobalTasks } from '../context/GlobalTaskContext';
+import UserAvatar from '../components/common/UserAvatar';
 import {
   BookOpen,
   Upload,
@@ -52,6 +54,7 @@ const clearSavedProgress = (id) => {
 };
 
 const ExamReviewer = () => {
+  const { user } = useAuth();
   // Category Tab: 'quiz' | 'exam'
   const [activeCategory, setActiveCategory] = useState('quiz');
 
@@ -594,13 +597,16 @@ const ExamReviewer = () => {
       {activeMaterial && isSessionCompleted && (
         <div className="bg-white/90 dark:bg-[#0f172a]/80 backdrop-blur-md rounded-3xl border border-slate-200/80 dark:border-slate-800/80 p-8 shadow-sm space-y-8">
           <div className="text-center space-y-4">
-            <div className="inline-flex p-4 rounded-3xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 ring-8 ring-emerald-500/10 mb-1">
-              <Award className="w-12 h-12" />
+            <div className="relative inline-flex items-center justify-center">
+              <UserAvatar user={user} size="xl" className="ring-6 ring-blue-500/20 shadow-xl" />
+              <div className="absolute -bottom-1 -right-1 p-2 rounded-2xl bg-emerald-500 text-white shadow-md">
+                <Award className="w-4 h-4" />
+              </div>
             </div>
 
             <div className="space-y-1">
               <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
-                {activeMaterial.category?.toUpperCase() || 'SESSION'} COMPLETED
+                {activeMaterial.category?.toUpperCase() || 'SESSION'} COMPLETED • {user?.name || 'Student'}
               </span>
               <h2 className="text-3xl font-black text-slate-900 dark:text-white">
                 {activeMaterial.subject} - {activeMaterial.title}

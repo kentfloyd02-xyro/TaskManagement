@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import api from '../api/client';
+import { useAuth } from '../context/AuthContext';
+import UserAvatar from '../components/common/UserAvatar';
 import AcademicPeriodBars from '../components/tasks/AcademicPeriodBars';
 import TaskDetailModal from '../components/tasks/TaskDetailModal';
 import GamificationWidget from '../components/gamification/GamificationWidget';
@@ -18,6 +20,7 @@ import {
 import { format } from 'date-fns';
 
 const Dashboard = () => {
+  const { user } = useAuth();
   const { refreshTrigger, triggerRefresh } = useOutletContext();
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -122,15 +125,27 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* Top Banner Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-2 border-b border-slate-200/60 dark:border-slate-800/60">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-            Academic Overview
-          </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
-            Monitor term milestones, upcoming assignment deadlines, and course workloads.
-          </p>
+      {/* Top Banner Header with User Avatar */}
+      <div className="bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-transparent p-5 sm:p-6 rounded-3xl border border-blue-500/20 backdrop-blur-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 shadow-xs">
+        <div className="flex items-center gap-4">
+          <UserAvatar user={user} size="xl" className="ring-4 ring-white dark:ring-slate-800 shadow-md" />
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-blue-500/15 text-blue-600 dark:text-blue-400">
+                {user?.yearLevel || 'College Student'}
+              </span>
+              <span className="text-xs font-medium text-slate-400 dark:text-slate-500">•</span>
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                {user?.course || 'Student Planner'}
+              </span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+              Welcome back, {user?.name ? user.name.split(' ')[0] : 'Student'}! 👋
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
+              Monitor term milestones, upcoming assignment deadlines, and course workloads.
+            </p>
+          </div>
         </div>
       </div>
 

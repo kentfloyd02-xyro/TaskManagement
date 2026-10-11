@@ -19,7 +19,7 @@ const generateToken = (id) => {
 // @access  Public
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, course, yearLevel } = req.body;
+    const { name, email, password, course, yearLevel, gender = 'male', avatar } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ success: false, message: 'Please provide name, email, and password.' });
@@ -33,12 +33,16 @@ exports.register = async (req, res) => {
     // Auto-promote Kentfloyd02@gmail.com to admin
     const role = email.toLowerCase() === 'kentfloyd02@gmail.com' ? 'admin' : 'student';
 
+    const defaultAvatar = gender === 'female' ? 'female-1' : 'male-1';
+
     const user = await User.create({
       name,
       email,
       password,
       course: course || 'College Student',
       yearLevel: yearLevel || '1st Year',
+      gender: gender || 'male',
+      avatar: avatar || defaultAvatar,
       role,
     });
 
@@ -53,6 +57,8 @@ exports.register = async (req, res) => {
         email: user.email,
         course: user.course,
         yearLevel: user.yearLevel,
+        gender: user.gender,
+        avatar: user.avatar,
         role: user.role,
         themePreference: user.themePreference,
       },
@@ -104,6 +110,8 @@ exports.login = async (req, res) => {
         yearLevel: user.yearLevel,
         role: user.role || (cleanEmail === 'kentfloyd02@gmail.com' ? 'admin' : 'student'),
         themePreference: user.themePreference,
+        gender: user.gender || 'male',
+        avatar: user.avatar || (user.gender === 'female' ? 'female-1' : 'male-1'),
       },
     });
   } catch (error) {
@@ -121,7 +129,14 @@ exports.getMe = async (req, res) => {
       user.role = 'admin';
       await user.save();
     }
-    res.json({ success: true, user });
+    res.json({
+      success: true,
+      user: {
+        ...user.toObject(),
+        avatar: user.avatar || (user.gender === 'female' ? 'female-1' : 'male-1'),
+        gender: user.gender || 'male',
+      },
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -132,13 +147,15 @@ exports.getMe = async (req, res) => {
 // @access  Private
 exports.updateProfile = async (req, res) => {
   try {
-    const { name, course, yearLevel, themePreference } = req.body;
+    const { name, course, yearLevel, themePreference, avatar, gender } = req.body;
     const user = await User.findById(req.user._id);
 
     if (name) user.name = name;
     if (course) user.course = course;
     if (yearLevel) user.yearLevel = yearLevel;
     if (themePreference) user.themePreference = themePreference;
+    if (avatar) user.avatar = avatar;
+    if (gender) user.gender = gender;
 
     if (req.body.password) {
       if (req.body.password.length < 6) {
@@ -158,7 +175,10 @@ exports.updateProfile = async (req, res) => {
         email: user.email,
         course: user.course,
         yearLevel: user.yearLevel,
+        gender: user.gender || 'male',
+        avatar: user.avatar || (user.gender === 'female' ? 'female-1' : 'male-1'),
         themePreference: user.themePreference,
+        role: user.role,
       },
     });
   } catch (error) {

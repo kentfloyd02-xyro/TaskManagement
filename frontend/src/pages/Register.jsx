@@ -11,6 +11,7 @@ const Register = () => {
   const [course, setCourse] = useState('BS Computer Science');
   const [customCourse, setCustomCourse] = useState('');
   const [yearLevel, setYearLevel] = useState('1st Year');
+  const [gender, setGender] = useState('male');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -24,7 +25,7 @@ const Register = () => {
 
     try {
       const finalCourse = course === 'Others' ? customCourse.trim() || 'Student' : course;
-      await register({ name, email, password, course: finalCourse, yearLevel });
+      await register({ name, email, password, course: finalCourse, yearLevel, gender });
       navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed.');
@@ -98,26 +99,15 @@ const Register = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 mb-1">
-                  Course / Program
+                  Gender *
                 </label>
                 <select
-                  value={course}
-                  onChange={(e) => setCourse(e.target.value)}
+                  value={gender}
+                  onChange={(e) => setGender(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500 font-medium cursor-pointer"
                 >
-                  <option value="BS Computer Science">BS Computer Science</option>
-                  <option value="BS Information Technology">BS Information Technology</option>
-                  <option value="BS Information Systems">BS Information Systems</option>
-                  <option value="BS Computer Engineering">BS Computer Engineering</option>
-                  <option value="BS Civil Engineering">BS Civil Engineering</option>
-                  <option value="BS Electrical Engineering">BS Electrical Engineering</option>
-                  <option value="BS Accountancy">BS Accountancy</option>
-                  <option value="BS Business Administration">BS Business Administration</option>
-                  <option value="BS Nursing">BS Nursing</option>
-                  <option value="BS Psychology">BS Psychology</option>
-                  <option value="BS Architecture">BS Architecture</option>
-                  <option value="BS Education">BS Education</option>
-                  <option value="Others">Others (Type below)</option>
+                  <option value="male">👨 Male</option>
+                  <option value="female">👩 Female</option>
                 </select>
               </div>
 
@@ -138,6 +128,31 @@ const Register = () => {
                   <option value="Graduate Student">Graduate Student</option>
                 </select>
               </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 mb-1">
+                Course / Program
+              </label>
+              <select
+                value={course}
+                onChange={(e) => setCourse(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500 font-medium cursor-pointer"
+              >
+                <option value="BS Computer Science">BS Computer Science</option>
+                <option value="BS Information Technology">BS Information Technology</option>
+                <option value="BS Information Systems">BS Information Systems</option>
+                <option value="BS Computer Engineering">BS Computer Engineering</option>
+                <option value="BS Civil Engineering">BS Civil Engineering</option>
+                <option value="BS Electrical Engineering">BS Electrical Engineering</option>
+                <option value="BS Accountancy">BS Accountancy</option>
+                <option value="BS Business Administration">BS Business Administration</option>
+                <option value="BS Nursing">BS Nursing</option>
+                <option value="BS Psychology">BS Psychology</option>
+                <option value="BS Architecture">BS Architecture</option>
+                <option value="BS Education">BS Education</option>
+                <option value="Others">Others (Type below)</option>
+              </select>
             </div>
 
             {/* Custom input for course only when Others is chosen */}
