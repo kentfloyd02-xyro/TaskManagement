@@ -18,6 +18,7 @@
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
     <script>
+      // Register Service Worker
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/sw.js').catch((err) => {
@@ -25,6 +26,13 @@
           });
         });
       }
+
+      // Capture beforeinstallprompt for PWA installation
+      window.addEventListener('beforeinstallprompt', (e) => {
+        // Prevent Chrome mini-infobar default
+        window.deferredPrompt = e;
+        window.dispatchEvent(new CustomEvent('pwa-install-ready'));
+      });
     </script>
   </body>
 </html>

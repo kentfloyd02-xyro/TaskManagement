@@ -19,12 +19,41 @@ import {
   ShieldCheck,
   MessageSquare,
   Calendar,
+  Download,
 } from 'lucide-react';
 
 const Sidebar = ({ onQuickAddClick }) => {
   const { user, logout, theme, toggleTheme } = useAuth();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+  const [canInstall, setCanInstall] = useState(!!window.deferredPrompt);
+
+  React.useEffect(() => {
+    const handleInstallReady = () => setCanInstall(true);
+    window.addEventListener('pwa-install-ready', handleInstallReady);
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      window.deferredPrompt = e;
+      setCanInstall(true);
+    });
+    return () => window.removeEventListener('pwa-install-ready', handleInstallReady);
+  }, []);
+
+  const handleInstallApp = async () => {
+    const promptEvent = window.deferredPrompt;
+    if (!promptEvent) {
+      alert(
+        'Upang i-install ang app sa Android o PC:\n\n1. Sa Chrome/Edge sa PC: I-click ang install icon sa address bar sa bandang kanan.\n2. Sa Android (Chrome): Pindutin ang tatlong tuldok (⋮) sa taas at piliin ang "Install App" o "Add to Home screen".'
+      );
+      return;
+    }
+    promptEvent.prompt();
+    const result = await promptEvent.userChoice;
+    if (result.outcome === 'accepted') {
+      setCanInstall(false);
+      window.deferredPrompt = null;
+    }
+  };
 
   const isAdmin =
     user?.role === 'admin' ||
@@ -175,6 +204,16 @@ const Sidebar = ({ onQuickAddClick }) => {
               )}
             </button>
 
+            {/* Install App Button */}
+            <button
+              onClick={handleInstallApp}
+              title="Install App sa Android o PC"
+              className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-xs font-bold bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900 transition-colors cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Install App</span>
+            </button>
+
             <button
               onClick={handleLogout}
               title="Logout"
@@ -183,8 +222,6 @@ const Sidebar = ({ onQuickAddClick }) => {
               <LogOut className="w-4 h-4" />
             </button>
           </div>
-
-          {/* User Details Profile Pill */}
           <div className="flex items-center gap-3 bg-white dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-700/60 shadow-2xs">
             <div
               className={`w-9 h-9 rounded-xl text-white font-bold flex items-center justify-center text-sm shadow-xs ${

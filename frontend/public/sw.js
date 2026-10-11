@@ -1,9 +1,12 @@
-const CACHE_NAME = 'student-planner-cache-v1';
+const CACHE_NAME = 'student-planner-cache-v2';
 const urlsToCache = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/favicon.svg'
+  '/favicon.svg',
+  '/pwa-192x192.png',
+  '/pwa-512x512.png',
+  '/logo.png'
 ];
 
 self.addEventListener('install', (event) => {
