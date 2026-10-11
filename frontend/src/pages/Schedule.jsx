@@ -73,10 +73,19 @@ const Schedule = () => {
         return;
       }
 
-      // Fetch VAPID public key
-      const vapidRes = await client.get('/schedule/vapid-key');
-      const publicKey = vapidRes.data?.publicKey;
-      if (!publicKey) throw new Error('VAPID public key not found on server');
+      // Fetch VAPID public key with fallback
+      let publicKey = '';
+      try {
+        const vapidRes = await client.get('/schedule/vapid-key');
+        publicKey = vapidRes.data?.publicKey;
+      } catch (e) {
+        console.warn('Could not fetch VAPID key from backend, using fallback key:', e);
+      }
+
+      // Default public key fallback
+      if (!publicKey) {
+        publicKey = 'BE7YZZPJxF-GbXxy1L11Nrd1uzpWddHejxbzDMVPyXBXDJvQBa_7W82SxBltk9Mz341Ug4KHzRObv2IwmG55_a4';
+      }
 
       const registration = await navigator.serviceWorker.ready;
       const convertedKey = urlBase64ToUint8Array(publicKey);

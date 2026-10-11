@@ -152,6 +152,8 @@ router.post('/subscribe-push', protect, async (req, res) => {
   }
 });
 
+const DEFAULT_VAPID_PUBLIC_KEY = 'BE7YZZPJxF-GbXxy1L11Nrd1uzpWddHejxbzDMVPyXBXDJvQBa_7W82SxBltk9Mz341Ug4KHzRObv2IwmG55_a4';
+
 /**
  * @route   GET /api/schedule/vapid-key
  * @desc    Get VAPID public key for frontend registration
@@ -160,7 +162,7 @@ router.post('/subscribe-push', protect, async (req, res) => {
 router.get('/vapid-key', (req, res) => {
   res.json({
     success: true,
-    publicKey: process.env.VAPID_PUBLIC_KEY || '',
+    publicKey: process.env.VAPID_PUBLIC_KEY || DEFAULT_VAPID_PUBLIC_KEY,
   });
 });
 

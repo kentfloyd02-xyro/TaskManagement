@@ -1,9 +1,12 @@
 const webpush = require('web-push');
 const User = require('../models/User');
 
-const publicKey = process.env.VAPID_PUBLIC_KEY;
-const privateKey = process.env.VAPID_PRIVATE_KEY;
-const subject = process.env.VAPID_SUBJECT || 'mailto:admin@studentplanner.edu';
+const publicKey =
+  process.env.VAPID_PUBLIC_KEY ||
+  'BE7YZZPJxF-GbXxy1L11Nrd1uzpWddHejxbzDMVPyXBXDJvQBa_7W82SxBltk9Mz341Ug4KHzRObv2IwmG55_a4';
+const privateKey =
+  process.env.VAPID_PRIVATE_KEY || '1_KEfgnUJa5Bd-HqaCEsKRw5Skyw8YbiCyscavi9c9w';
+const subject = process.env.VAPID_SUBJECT || 'mailto:kentfloyd02@gmail.com';
 
 if (publicKey && privateKey) {
   webpush.setVapidDetails(subject, publicKey, privateKey);
