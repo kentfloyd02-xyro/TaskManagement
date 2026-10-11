@@ -24,17 +24,54 @@ const Dashboard = () => {
 
   const [announcements, setAnnouncements] = useState([]);
 
+  const defaultSummary = {
+    periods: {
+      Prelim: { total: 0, completed: 0, pending: 0, percentage: 0 },
+      Midterm: { total: 0, completed: 0, pending: 0, percentage: 0 },
+      Finals: { total: 0, completed: 0, pending: 0, percentage: 0 },
+    },
+    statusCounts: {
+      Backlog: 0,
+      'To Do': 0,
+      'In Progress': 0,
+      Review: 0,
+      Completed: 0,
+      totalActive: 0,
+    },
+    priorityCounts: { Urgent: 0, High: 0, Medium: 0, Low: 0 },
+    upcomingDeadlines: [],
+    overdueCount: 0,
+    totalSubjects: 0,
+    totalProjects: 0,
+  };
+
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const [dashRes, annRes] = await Promise.all([
+        const [dashRes, annRes] = await Promise.allSettled([
           api.get('/analytics/dashboard-summary'),
           api.get('/admin/announcements'),
         ]);
-        setSummary(dashRes.data.data);
-        setAnnouncements(annRes.data.data || []);
+
+        if (dashRes.status === 'fulfilled' && dashRes.value.data?.success) {
+          setSummary(dashRes.value.data.data);
+          localStorage.setItem('cached_dashboard_summary', JSON.stringify(dashRes.value.data.data));
+        } else {
+          const cached = localStorage.getItem('cached_dashboard_summary');
+          if (cached) {
+            setSummary(JSON.parse(cached));
+          } else {
+            setSummary(defaultSummary);
+          }
+        }
+
+        if (annRes.status === 'fulfilled' && annRes.value.data?.success) {
+          setAnnouncements(annRes.value.data.data || []);
+        }
       } catch (err) {
-        console.error('Failed to load dashboard:', err);
+        console.warn('Dashboard fetch issue, loading fallback:', err);
+        const cached = localStorage.getItem('cached_dashboard_summary');
+        setSummary(cached ? JSON.parse(cached) : defaultSummary);
       } finally {
         setLoading(false);
       }
@@ -43,7 +80,7 @@ const Dashboard = () => {
     fetchDashboard();
   }, [refreshTrigger]);
 
-  if (loading) {
+  if (loading && !summary) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="relative">
