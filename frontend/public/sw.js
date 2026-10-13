@@ -114,12 +114,14 @@ self.addEventListener('push', (event) => {
     body: data.body,
     icon: data.icon || '/logo.png',
     badge: data.badge || '/logo.png',
-    vibrate: [200, 100, 200],
+    vibrate: [500, 150, 500, 150, 500],
+    requireInteraction: true,
     data: {
-      url: data.url || '/dashboard',
+      url: data.url || '/schedule',
+      alarm: data.data || data.alarm || null,
     },
     actions: [
-      { action: 'open', title: 'Open Planner' },
+      { action: 'open', title: '🚨 Open & View Alarm' },
       { action: 'close', title: 'Dismiss' },
     ],
   };
@@ -127,15 +129,19 @@ self.addEventListener('push', (event) => {
   event.waitUntil(self.registration.showNotification(data.title, options));
 });
 
-// Click listener to bring phone user directly to planner page
+// Click listener to bring phone user directly to planner page and trigger in-app siren
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const urlToOpen = event.notification.data?.url || '/schedule';
+  const alarmData = event.notification.data?.alarm;
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
       for (let client of windowClients) {
-        if (client.url.includes(urlToOpen) && 'focus' in client) {
+        if ('focus' in client) {
+          if (alarmData) {
+            client.postMessage({ type: 'TRIGGER_ALARM', alarm: alarmData });
+          }
           return client.focus();
         }
       }

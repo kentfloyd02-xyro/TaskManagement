@@ -108,9 +108,12 @@ app.use((err, req, res, next) => {
   });
 });
 
+const { startScheduleNotificationJob } = require('./services/scheduleNotificationJob');
+
 const PORT = process.env.PORT || 5000;
 
 server.listen(PORT, () => {
   console.log(`[Student Planner Server] Running with Socket.io on http://localhost:${PORT}`);
+  startScheduleNotificationJob(io);
 });
 

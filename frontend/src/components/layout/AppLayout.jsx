@@ -8,12 +8,21 @@ import DynamicIslandNotification from '../common/DynamicIslandNotification';
 import FloatingTaskPills from '../common/FloatingTaskPills';
 import ScheduleScanModal from '../subjects/ScheduleScanModal';
 import UploadMaterialModal from '../reviewer/UploadMaterialModal';
+import ClassAlarmModal from '../schedule/ClassAlarmModal';
 import { useGlobalTasks } from '../../context/GlobalTaskContext';
 
 const AppLayout = () => {
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const { scheduleTask, setScheduleTask, reviewerTask, setReviewerTask } = useGlobalTasks();
+  const {
+    scheduleTask,
+    setScheduleTask,
+    reviewerTask,
+    setReviewerTask,
+    activeAlarm,
+    handleStopAlarm,
+    handleSnoozeAlarm,
+  } = useGlobalTasks();
 
   const handleTaskCreated = () => {
     setIsQuickAddOpen(false);
@@ -64,6 +73,15 @@ const AppLayout = () => {
         initialCategory={reviewerTask.category || 'quiz'}
         onSuccess={() => setRefreshTrigger((p) => p + 1)}
       />
+
+      {/* Global High-Priority Emergency Class Alarm Modal */}
+      {activeAlarm && (
+        <ClassAlarmModal
+          alarm={activeAlarm}
+          onStop={handleStopAlarm}
+          onSnooze={handleSnoozeAlarm}
+        />
+      )}
     </div>
   );
 };

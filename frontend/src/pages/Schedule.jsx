@@ -14,11 +14,14 @@ import {
   X,
   AlertCircle,
   Smartphone,
+  Volume2,
 } from 'lucide-react';
+import { useGlobalTasks } from '../context/GlobalTaskContext';
 
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 const Schedule = () => {
+  const { triggerManualAlarmTest } = useGlobalTasks();
   const [schedules, setSchedules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -197,6 +200,16 @@ const Schedule = () => {
               <span>15-min Phone Alerts Active</span>
             </span>
           )}
+
+          {/* Test Alarm Siren Button */}
+          <button
+            onClick={() => triggerManualAlarmTest(schedules[0] || null)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800/80 hover:bg-rose-100 dark:hover:bg-rose-900/40 active:scale-95 transition-all cursor-pointer"
+            title="Subukan ang tunog ng Siren Alarm at Snooze/Stop buttons"
+          >
+            <Volume2 className="w-3.5 h-3.5 animate-pulse" />
+            <span>Test Alarm Siren</span>
+          </button>
 
           <button
             onClick={() => setIsModalOpen(true)}
