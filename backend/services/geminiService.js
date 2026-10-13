@@ -23,7 +23,12 @@ function getResolvedModelName() {
   return envModel;
 }
 
-const FLASH_MODELS = ['gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-3.5-flash'];
+const FLASH_MODELS = [
+  'gemini-3.8-flash',
+  'gemini-2.5-flash',
+  'gemini-2.0-flash',
+  'gemini-1.5-flash',
+];
 
 /**
  * Robust content generation wrapper that handles temporary 503 spikes,
@@ -310,32 +315,37 @@ async function generateChatbotReply({ messages = [], userContext = {}, enrolledS
       : 'walang naka-enroll';
 
   const systemInstruction = `
-You are an expert academic AI Study Assistant exclusively tailored for the Student Task & Exam Management System.
+You are an ultra-concise, strict academic AI Study Assistant for the Student Task & Exam Management System.
 The student is named "${userContext.name || 'Student'}".
 
 THE STUDENT IS STRICTLY ENROLLED IN THE FOLLOWING SUBJECTS ONLY:
 ${subjectListStr}
 
-=== CRITICAL ACADEMIC GUARDRAILS ===
-You MUST strictly evaluate if the student's question/topic is directly related to any of their enrolled subjects (${subjectCodesStr}) or academic study curriculum in those subjects.
+=== CRITICAL RULES & STRICT GUARDRAILS ===
+1. STRICT SUBJECT BOUNDARIES:
+   - You are ONLY permitted to answer questions that are DIRECTLY and SPECIFICALLY part of the lessons, curriculum, and exam materials of the student's enrolled subjects (${subjectCodesStr}).
+   - DO NOT ASSUME or FORCE an association. For example, do NOT connect generic programming, math, or random prompts to a course unless the student specifically asks within that subject's explicit syllabus.
+   - If the student's question is NOT directly and clearly related to their enrolled subjects, you MUST REJECT IT as OUT OF TOPIC.
 
-1. SCOPE VERIFICATION:
-   - ACCEPT: Questions, exercises, coding, math, theories, definitions, review problems, debugging, essay guidelines, or study questions that are directly related to the subjects listed above (${subjectCodesStr}).
-   - REJECT (OUT-OF-TOPIC): Questions that are unrelated to their enrolled subjects (e.g. video games, anime, movies, pop culture, entertainment, dating/romance advice, relationships, cooking/recipes, sports, gossip, small talk, or random subjects they are not taking).
+2. MANDATORY 1-3 SENTENCES LENGTH LIMIT:
+   - Your reply MUST be strictly MAXIMUM 1 TO 3 SENTENCES ONLY.
+   - Absolutely NO long paragraphs, NO multi-step essays, NO lengthy explanations, and NO full program/class boilerplate.
+   - If code is requested, provide only a single compact line (e.g. \`ArrayList<String> list = new ArrayList<>();\`) inside the 1-3 sentences.
+   - Stop talking after 1 to 3 short sentences.
 
-2. REQUIRED OUTPUT FORMAT:
-   You MUST respond with a single, valid JSON object (NO markdown formatting, NO backticks \`\`\`json):
-   
-   If the question is OUT-OF-TOPIC:
+3. REQUIRED JSON OUTPUT FORMAT:
+   Respond ONLY with a single valid JSON object (NO markdown wrapper, NO backticks \`\`\`json):
+
+   If OUT OF TOPIC:
    {
      "isOutOfTopic": true,
      "message": "⚠️ Out of Topic: Ang AI Study Assistant ay eksklusibo lamang para sa iyong mga enrolled subjects (${subjectCodesStr}). Ang iyong tanong ay walang kaugnayan sa alinman sa iyong mga aralin. Mangyaring magtanong lamang tungkol sa iyong mga registered subjects."
    }
 
-   If the question IS WITHIN SCOPE:
+   If WITHIN ENROLLED SUBJECT SCOPE:
    {
      "isOutOfTopic": false,
-     "reply": "Your concise, direct, helpful, and educational answer here. Provide step-by-step solutions or clear explanations matching the user's language (Tagalog/English/Taglish). No fluff or filler."
+     "reply": "Your exact, crisp answer here in strictly 1 to 3 sentences only."
    }
 `;
 
@@ -352,7 +362,8 @@ You MUST strictly evaluate if the student's question/topic is directly related t
     primaryModel: modelName,
     contents: contents,
     config: {
-      temperature: 0.2,
+      temperature: 0.1,
+      maxOutputTokens: 200, // Hard stop to ensure concise responses
     },
   });
 
@@ -375,7 +386,24 @@ You MUST strictly evaluate if the student's question/topic is directly related t
     }
   }
 
+  // Helper to ensure reply is strictly 1 to 3 sentences
+  const limitToThreeSentences = (text) => {
+    if (!text) return '';
+    const sentences = text.match(/[^.!?\n]+[.!?]+(\s|$)/g);
+    if (sentences && sentences.length > 3) {
+      return sentences.slice(0, 3).join('').trim();
+    }
+    const lines = text.split('\n').filter((l) => l.trim().length > 0);
+    if (lines.length > 3) {
+      return lines.slice(0, 3).join('. ').trim();
+    }
+    return text.trim();
+  };
+
   if (parsed && typeof parsed.isOutOfTopic === 'boolean') {
+    if (!parsed.isOutOfTopic && parsed.reply) {
+      parsed.reply = limitToThreeSentences(parsed.reply);
+    }
     return parsed;
   }
 
@@ -390,7 +418,7 @@ You MUST strictly evaluate if the student's question/topic is directly related t
 
   return {
     isOutOfTopic: false,
-    reply: responseText || 'Paumanhin, hindi ako nakabuo ng sagot sa pagkakataong ito.',
+    reply: limitToThreeSentences(responseText) || 'Paumanhin, hindi ako nakabuo ng sagot sa pagkakataong ito.',
   };
 }
 
