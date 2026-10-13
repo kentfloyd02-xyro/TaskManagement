@@ -56,21 +56,25 @@ async function generateContentWithFallback(ai, { contents, config = {}, primaryM
       } catch (err) {
         lastError = err;
         const errMsg = err.message || '';
-        const isSpike =
-          err.status === 503 ||
-          errMsg.includes('503') ||
-          errMsg.includes('high demand') ||
-          errMsg.includes('UNAVAILABLE') ||
+        const isQuotaExceeded =
+          errMsg.includes('429') ||
+          errMsg.includes('quota') ||
           errMsg.includes('RESOURCE_EXHAUSTED');
+        const isSpike =
+          !isQuotaExceeded &&
+          (err.status === 503 ||
+            errMsg.includes('503') ||
+            errMsg.includes('high demand') ||
+            errMsg.includes('UNAVAILABLE'));
 
         console.warn(`[Gemini API] Model ${model} (attempt ${attempt}/2) failed: ${errMsg.slice(0, 100)}`);
 
         if (isSpike && attempt === 1) {
-          // Wait 1.2s before retry on the same model
+          // Wait 1.2s before retry on the same model during a temporary server spike
           await new Promise((r) => setTimeout(r, 1200));
           continue;
         }
-        // Move to next candidate model in the chain
+        // Immediately move to next candidate model in the chain
         break;
       }
     }
@@ -228,7 +232,7 @@ async function generateReviewQuestions({
   }
 
   const ai = new GoogleGenAI({ apiKey });
-  const modelName = getResolvedModelName();
+  const modelName = process.env.GEMINI_REVIEWER_MODEL || 'gemini-3.8-flash';
 
   // Truncate overly long text (keep max ~35,000 characters to stay well within limits)
   const trimmedContext = (textContext || '').slice(0, 35000);
@@ -268,6 +272,7 @@ ${trimmedContext}
     contents: prompt,
     config: {
       temperature: 0.3,
+      responseMimeType: 'application/json',
     },
   });
 
@@ -455,7 +460,7 @@ async function parseScheduleWithGemini({ mimeType, fileBuffer, textContent }) {
   }
 
   const ai = new GoogleGenAI({ apiKey });
-  const modelName = getResolvedModelName();
+  const modelName = process.env.GEMINI_REVIEWER_MODEL || 'gemini-3.8-flash';
 
   const systemInstruction = `
 You are an expert academic schedule analyzer and OCR system for students.
