@@ -237,31 +237,114 @@ async function generateReviewQuestions({
   // Truncate overly long text (keep max ~35,000 characters to stay well within limits)
   const trimmedContext = (textContext || '').slice(0, 35000);
 
+  let typeSpecificInstructions = '';
+  let typeSpecificSchema = '';
+
+  if (questionType === 'multiple_choice') {
+    typeSpecificInstructions = `
+CRITICAL FORMAT REQUIREMENT:
+- You MUST generate 100% MULTIPLE CHOICE questions ONLY.
+- ALL ${questionCount} questions MUST have "type": "multiple_choice".
+- DO NOT generate any identification, true/false, or enumeration questions under any circumstances.
+- Each question MUST have exactly 4 plausible choices in the "a" array.
+- "c" MUST be the 0-based integer index (0, 1, 2, or 3) of the correct choice.
+`;
+    typeSpecificSchema = `
+[
+  {
+    "q": "Clear multiple choice question text here?",
+    "type": "multiple_choice",
+    "a": ["Option A", "Option B", "Option C", "Option D"],
+    "c": 0,
+    "explanation": "Brief explanation of why this answer is correct"
+  }
+]`;
+  } else if (questionType === 'identification') {
+    typeSpecificInstructions = `
+CRITICAL FORMAT REQUIREMENT:
+- You MUST generate 100% IDENTIFICATION questions ONLY.
+- ALL ${questionCount} questions MUST have "type": "identification".
+- DO NOT generate any multiple choice or enumeration questions under any circumstances.
+- Provide the question asking for a specific concept, term, formula, or person.
+- Set "expectedAnswer" as the concise exact term or answer.
+- "a" MUST be an empty array [].
+`;
+    typeSpecificSchema = `
+[
+  {
+    "q": "Identification question text here asking for a specific term?",
+    "type": "identification",
+    "a": [],
+    "expectedAnswer": "Exact Correct Term",
+    "explanation": "Brief explanation of the term"
+  }
+]`;
+  } else if (questionType === 'enumeration') {
+    typeSpecificInstructions = `
+CRITICAL FORMAT REQUIREMENT:
+- You MUST generate 100% ENUMERATION questions ONLY.
+- ALL ${questionCount} questions MUST have "type": "enumeration".
+- DO NOT generate any multiple choice or identification questions under any circumstances.
+- Provide a question asking the student to enumerate or list 2 to 6 key components, steps, types, or items (e.g. "Enumerate the 3 primary states of matter").
+- "expectedItems" MUST be an array of the required items (e.g. ["Solid", "Liquid", "Gas"]).
+- "a" MUST be an empty array [].
+`;
+    typeSpecificSchema = `
+[
+  {
+    "q": "Enumerate the primary elements/steps of...?",
+    "type": "enumeration",
+    "a": [],
+    "expectedItems": ["Item 1", "Item 2", "Item 3"],
+    "explanation": "Brief explanation"
+  }
+]`;
+  } else {
+    // Mixed
+    typeSpecificInstructions = `
+CRITICAL FORMAT REQUIREMENT:
+- Generate a balanced mixture of "multiple_choice", "identification", and "enumeration" questions across the ${questionCount} items.
+- For multiple_choice: include 4 choices in "a" and 0-based index in "c".
+- For identification: set "expectedAnswer" and "a": [].
+- For enumeration: set "expectedItems": ["Item 1", "Item 2"] and "a": [].
+`;
+    typeSpecificSchema = `
+[
+  {
+    "q": "Multiple choice question?",
+    "type": "multiple_choice",
+    "a": ["A", "B", "C", "D"],
+    "c": 0,
+    "explanation": "Why this is correct"
+  },
+  {
+    "q": "Identification question?",
+    "type": "identification",
+    "a": [],
+    "expectedAnswer": "Specific Term",
+    "explanation": "Why this is correct"
+  },
+  {
+    "q": "Enumeration question?",
+    "type": "enumeration",
+    "a": [],
+    "expectedItems": ["Item 1", "Item 2"],
+    "explanation": "Why this is correct"
+  }
+]`;
+  }
+
   const prompt = `
 You are an expert academic professor creating a high quality ${category.toUpperCase()} reviewer for the subject "${subject}".
 Analyze the study material provided below and generate exactly ${questionCount} questions.
 
-Question Type Requested: ${questionType} (Options: multiple_choice, identification, enumeration, mixed)
-- If multiple_choice: provide 4 sensible choices in "a" array, and "c" as the 0-based integer index of the correct choice.
-- If identification: provide the question, set "expectedAnswer" as the concise exact term/name/definition, and set "a" to an empty array.
-- If enumeration: ask to enumerate key items, set "expectedItems" as an array of items (e.g. ["Item 1", "Item 2"]), and set "a" to an empty array.
-- If mixed: create a balanced mix of multiple_choice, identification, and enumeration.
+${typeSpecificInstructions}
 
-CRITICAL INSTRUCTIONS:
+CRITICAL RULES:
 1. Make the questions challenging, educational, and strictly based on the provided material.
-2. Return ONLY a valid JSON array of objects. Do not include markdown codeblocks (\`\`\`json) or extra conversational words.
-3. Each question object MUST have this exact schema:
-[
-  {
-    "q": "Question text here?",
-    "type": "multiple_choice" | "identification" | "enumeration",
-    "a": ["Option A", "Option B", "Option C", "Option D"], // only for multiple_choice
-    "c": 0, // 0-based index of correct option, only for multiple_choice
-    "expectedAnswer": "Correct Term", // for identification
-    "expectedItems": ["Item 1", "Item 2"], // for enumeration
-    "explanation": "Brief explanation of why this answer is correct"
-  }
-]
+2. Return ONLY a valid JSON array of objects matching the schema below.
+3. EXACT JSON SCHEMA TO FOLLOW:
+${typeSpecificSchema}
 
 STUDY MATERIAL:
 ${trimmedContext}
@@ -301,6 +384,48 @@ ${trimmedContext}
   if (!Array.isArray(parsedQuestions) || parsedQuestions.length === 0) {
     throw new Error('No questions could be extracted from the material.');
   }
+
+  // Strict post-processing enforcement based on selected format
+  parsedQuestions = parsedQuestions.map((q) => {
+    if (questionType === 'multiple_choice') {
+      q.type = 'multiple_choice';
+      if (!Array.isArray(q.a) || q.a.length < 2) {
+        const answer =
+          q.expectedAnswer ||
+          (Array.isArray(q.expectedItems) ? q.expectedItems.join(', ') : 'Correct Option');
+        q.a = [answer, 'None of the above', 'All of the above', 'Both A and B'];
+        q.c = 0;
+      }
+      if (typeof q.c !== 'number' || q.c < 0 || q.c >= q.a.length) {
+        q.c = 0;
+      }
+    } else if (questionType === 'identification') {
+      q.type = 'identification';
+      if (!q.expectedAnswer) {
+        if (Array.isArray(q.a) && typeof q.c === 'number' && q.a[q.c]) {
+          q.expectedAnswer = q.a[q.c];
+        } else if (Array.isArray(q.expectedItems) && q.expectedItems.length > 0) {
+          q.expectedAnswer = q.expectedItems.join(', ');
+        } else {
+          q.expectedAnswer = 'Correct Answer';
+        }
+      }
+      q.a = [];
+    } else if (questionType === 'enumeration') {
+      q.type = 'enumeration';
+      if (!Array.isArray(q.expectedItems) || q.expectedItems.length === 0) {
+        if (q.expectedAnswer) {
+          q.expectedItems = [q.expectedAnswer];
+        } else if (Array.isArray(q.a) && typeof q.c === 'number' && q.a[q.c]) {
+          q.expectedItems = [q.a[q.c]];
+        } else {
+          q.expectedItems = ['Item 1', 'Item 2'];
+        }
+      }
+      q.a = [];
+    }
+    return q;
+  });
 
   return parsedQuestions;
 }
