@@ -35,9 +35,11 @@ const AIChatbot = () => {
   const [aiUsage, setAiUsage] = useState({
     isSuperAdmin: false,
     unlimited: false,
-    remaining: 50,
+    remaining: 300,
     usedToday: 0,
-    dailyLimit: 50,
+    dailyLimit: 300,
+    percentageUsed: 0,
+    nextResetTime: 'Resets at 12:00 AM',
   });
 
   const messagesEndRef = useRef(null);
@@ -133,7 +135,7 @@ const AIChatbot = () => {
     }
 
     if (!isSuperAdmin && aiUsage.remaining <= 0) {
-      alert('Naubos mo na ang iyong 50 AI tokens para sa araw na ito. Mag-rereset ito bukas!');
+      alert('Naabot mo na ang iyong daily limit na 300 AI tokens para sa araw na ito. Mag-rereset ito bukas ng 12:00 AM!');
       return;
     }
 
@@ -158,6 +160,9 @@ const AIChatbot = () => {
             ...prev,
             remaining: data.usage.remaining,
             usedToday: data.usage.usedToday,
+            dailyLimit: data.usage.dailyLimit || 300,
+            percentageUsed: data.usage.percentageUsed,
+            nextResetTime: data.usage.nextResetTime,
             unlimited: data.usage.unlimited,
           }));
         }
@@ -227,12 +232,12 @@ const AIChatbot = () => {
                   ) : (
                     <span
                       className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${
-                        aiUsage.remaining > 10
+                        aiUsage.remaining > 50
                           ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800'
                           : 'bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-800'
                       }`}
                     >
-                      {aiUsage.remaining}/50 Tokens Left
+                      {aiUsage.remaining}/300 Tokens Left
                     </span>
                   )}
                 </div>
@@ -264,6 +269,45 @@ const AIChatbot = () => {
               >
                 <X className="w-4 h-4" />
               </button>
+            </div>
+          </div>
+
+          {/* Credits Bar (Matching user requested screenshot) */}
+          <div className="px-5 py-2.5 bg-slate-50/90 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800/80">
+            <div className="flex items-center justify-between text-[11px] mb-1">
+              <span className="font-semibold text-slate-600 dark:text-slate-300">Credits</span>
+              <span className="text-slate-400 dark:text-slate-500 font-medium">
+                {isSuperAdmin ? 'Unlimited Admin Access' : (aiUsage.nextResetTime || 'Resets at 12:00 AM')}
+              </span>
+            </div>
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="font-bold text-slate-800 dark:text-slate-100 text-xs tracking-tight">
+                {isSuperAdmin
+                  ? '0% used'
+                  : `${aiUsage.percentageUsed ?? Math.round(((aiUsage.usedToday || 0) / 300) * 100)}% used`}
+              </span>
+              <span className="text-[10px] text-slate-400 font-medium">
+                {isSuperAdmin ? '∞ Unlimited' : `${aiUsage.usedToday || 0} / 300 tokens`}
+              </span>
+            </div>
+            {/* Smooth Progress Bar */}
+            <div className="w-full bg-slate-200/80 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${
+                  isSuperAdmin
+                    ? 'w-full bg-blue-600'
+                    : (aiUsage.percentageUsed ?? 0) >= 90
+                    ? 'bg-rose-500'
+                    : (aiUsage.percentageUsed ?? 0) >= 75
+                    ? 'bg-amber-500'
+                    : 'bg-blue-600 dark:bg-blue-500'
+                }`}
+                style={{
+                  width: isSuperAdmin
+                    ? '100%'
+                    : `${Math.min(100, Math.max(0, aiUsage.percentageUsed ?? Math.round(((aiUsage.usedToday || 0) / 300) * 100)))}%`,
+                }}
+              />
             </div>
           </div>
 
@@ -341,9 +385,17 @@ const AIChatbot = () => {
                         className={`max-w-[82%] p-3.5 rounded-2xl leading-relaxed whitespace-pre-wrap break-words ${
                           isUser
                             ? 'bg-blue-600 text-white rounded-tr-none shadow-md shadow-blue-500/15'
+                            : m.isOutOfTopic || m.content?.includes('Out of Topic') || m.content?.includes('Walang Nakitang Subjects')
+                            ? 'bg-amber-50/90 dark:bg-amber-950/40 text-amber-950 dark:text-amber-200 border border-amber-300/80 dark:border-amber-800/80 rounded-tl-none shadow-2xs'
                             : 'bg-white dark:bg-slate-800/90 text-slate-800 dark:text-slate-100 border border-slate-200/80 dark:border-slate-700/80 rounded-tl-none shadow-2xs'
                         }`}
                       >
+                        {(m.isOutOfTopic || m.content?.includes('Out of Topic') || m.content?.includes('Walang Nakitang Subjects')) && (
+                          <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 mb-2 pb-1.5 border-b border-amber-200/80 dark:border-amber-800/60">
+                            <AlertCircle className="w-3.5 h-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+                            <span>Academic Guardrail Active • 0 Tokens Deducted</span>
+                          </div>
+                        )}
                         {m.content}
                       </div>
                     </div>
@@ -376,8 +428,8 @@ const AIChatbot = () => {
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder={
                     !isSuperAdmin && aiUsage.remaining <= 0
-                      ? 'Naabot mo na ang 50 daily token limit...'
-                      : 'Magtanong tungkol sa iyong subject, quiz, o reviewers...'
+                      ? 'Naabot mo na ang 300 daily token limit...'
+                      : 'Magtanong tungkol sa iyong mga enrolled subjects o reviewers...'
                   }
                   disabled={loading || (!isSuperAdmin && aiUsage.remaining <= 0)}
                   className="flex-1 bg-slate-100 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700/80 rounded-2xl px-4 py-2.5 text-xs md:text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all disabled:opacity-50"

@@ -1,7 +1,7 @@
 const { GoogleGenAI } = require('@google/genai');
 const User = require('../models/User');
 
-const DAILY_TOKEN_LIMIT = 50;
+const DAILY_TOKEN_LIMIT = 300;
 
 /**
  * Ensures a valid and available Gemini model is used.
@@ -122,10 +122,12 @@ async function checkAndIncrementAiUsage(userId) {
       remaining: 'Unlimited',
       usedToday: user.aiUsage.count,
       dailyLimit: 'Unlimited',
+      percentageUsed: 0,
+      nextResetTime: 'Resets at 12:00 AM',
     };
   }
 
-  // Regular user rate limiting
+  // Regular user rate limiting (300 daily tokens)
   if (user.aiUsage.count >= DAILY_TOKEN_LIMIT) {
     return {
       allowed: false,
@@ -133,19 +135,25 @@ async function checkAndIncrementAiUsage(userId) {
       remaining: 0,
       usedToday: user.aiUsage.count,
       dailyLimit: DAILY_TOKEN_LIMIT,
-      message: `Naabot mo na ang iyong daily limit na ${DAILY_TOKEN_LIMIT} AI requests para sa araw na ito. Mag-rereset ito bukas!`,
+      percentageUsed: 100,
+      nextResetTime: 'Resets at 12:00 AM',
+      message: `Naabot mo na ang iyong daily limit na ${DAILY_TOKEN_LIMIT} AI tokens para sa araw na ito. Mag-rereset ito bukas ng 12:00 AM!`,
     };
   }
 
   user.aiUsage.count += 1;
   await user.save();
 
+  const percentageUsed = Math.min(100, Math.round((user.aiUsage.count / DAILY_TOKEN_LIMIT) * 100));
+
   return {
     allowed: true,
     unlimited: false,
-    remaining: DAILY_TOKEN_LIMIT - user.aiUsage.count,
+    remaining: Math.max(0, DAILY_TOKEN_LIMIT - user.aiUsage.count),
     usedToday: user.aiUsage.count,
     dailyLimit: DAILY_TOKEN_LIMIT,
+    percentageUsed,
+    nextResetTime: 'Resets at 12:00 AM',
   };
 }
 
@@ -173,8 +181,12 @@ async function getAiUsageStatus(userId) {
       usedToday: count,
       remaining: 'Unlimited',
       dailyLimit: 'Unlimited',
+      percentageUsed: 0,
+      nextResetTime: 'Resets at 12:00 AM',
     };
   }
+
+  const percentageUsed = Math.min(100, Math.round((count / DAILY_TOKEN_LIMIT) * 100));
 
   return {
     isSuperAdmin: false,
@@ -182,6 +194,8 @@ async function getAiUsageStatus(userId) {
     usedToday: count,
     remaining: Math.max(0, DAILY_TOKEN_LIMIT - count),
     dailyLimit: DAILY_TOKEN_LIMIT,
+    percentageUsed,
+    nextResetTime: 'Resets at 12:00 AM',
   };
 }
 
@@ -274,9 +288,10 @@ ${trimmedContext}
 }
 
 /**
- * Handle AI Chatbot response with conversation context
+ * Handle AI Chatbot response with conversation context and STRICT SUBJECT GUARDRAILS.
+ * Restricts questions exclusively to the student's enrolled subjects.
  */
-async function generateChatbotReply({ messages = [], userContext = {} }) {
+async function generateChatbotReply({ messages = [], userContext = {}, enrolledSubjects = [] }) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error('Gemini API key is not configured on the server.');
@@ -285,15 +300,43 @@ async function generateChatbotReply({ messages = [], userContext = {} }) {
   const ai = new GoogleGenAI({ apiKey });
   const modelName = getResolvedModelName();
 
-  const systemInstruction = `
-You are a high-efficiency AI Study Assistant for the Student Task & Exam Management System.
-The user is a student named "${userContext.name || 'Student'}".
+  const subjectListStr =
+    enrolledSubjects.length > 0
+      ? enrolledSubjects.map((s) => `- [${s.code}] ${s.name}`).join('\n')
+      : '(No enrolled subjects registered)';
+  const subjectCodesStr =
+    enrolledSubjects.length > 0
+      ? enrolledSubjects.map((s) => s.code).join(', ')
+      : 'walang naka-enroll';
 
-STRICT RESPONSE RULES:
-1. Be extremely precise, concise, and straight to the point ("on-point").
-2. No unnecessary filler, fluff, long introductions, or repetitive closings.
-3. Answer directly: provide immediate answers, step-by-step solutions, code, or bulleted key points.
-4. Match the user's language naturally (Tagalog, English, or Taglish). Keep it crisp, sharp, and helpful.
+  const systemInstruction = `
+You are an expert academic AI Study Assistant exclusively tailored for the Student Task & Exam Management System.
+The student is named "${userContext.name || 'Student'}".
+
+THE STUDENT IS STRICTLY ENROLLED IN THE FOLLOWING SUBJECTS ONLY:
+${subjectListStr}
+
+=== CRITICAL ACADEMIC GUARDRAILS ===
+You MUST strictly evaluate if the student's question/topic is directly related to any of their enrolled subjects (${subjectCodesStr}) or academic study curriculum in those subjects.
+
+1. SCOPE VERIFICATION:
+   - ACCEPT: Questions, exercises, coding, math, theories, definitions, review problems, debugging, essay guidelines, or study questions that are directly related to the subjects listed above (${subjectCodesStr}).
+   - REJECT (OUT-OF-TOPIC): Questions that are unrelated to their enrolled subjects (e.g. video games, anime, movies, pop culture, entertainment, dating/romance advice, relationships, cooking/recipes, sports, gossip, small talk, or random subjects they are not taking).
+
+2. REQUIRED OUTPUT FORMAT:
+   You MUST respond with a single, valid JSON object (NO markdown formatting, NO backticks \`\`\`json):
+   
+   If the question is OUT-OF-TOPIC:
+   {
+     "isOutOfTopic": true,
+     "message": "⚠️ Out of Topic: Ang AI Study Assistant ay eksklusibo lamang para sa iyong mga enrolled subjects (${subjectCodesStr}). Ang iyong tanong ay walang kaugnayan sa alinman sa iyong mga aralin. Mangyaring magtanong lamang tungkol sa iyong mga registered subjects."
+   }
+
+   If the question IS WITHIN SCOPE:
+   {
+     "isOutOfTopic": false,
+     "reply": "Your concise, direct, helpful, and educational answer here. Provide step-by-step solutions or clear explanations matching the user's language (Tagalog/English/Taglish). No fluff or filler."
+   }
 `;
 
   // Build contents history
@@ -308,9 +351,47 @@ STRICT RESPONSE RULES:
   const response = await generateContentWithFallback(ai, {
     primaryModel: modelName,
     contents: contents,
+    config: {
+      temperature: 0.2,
+    },
   });
 
-  return response.text || 'Paumanhin, hindi ako nakabuo ng sagot sa pagkakataong ito.';
+  const responseText = response.text || '';
+  let parsed = null;
+
+  try {
+    const cleaned = responseText
+      .replace(/^```json/m, '')
+      .replace(/^```/m, '')
+      .replace(/```$/m, '')
+      .trim();
+    parsed = JSON.parse(cleaned);
+  } catch (err) {
+    const match = responseText.match(/\{[\s\S]*\}/);
+    if (match) {
+      try {
+        parsed = JSON.parse(match[0]);
+      } catch (_) {}
+    }
+  }
+
+  if (parsed && typeof parsed.isOutOfTopic === 'boolean') {
+    return parsed;
+  }
+
+  // Fallback: If model responded in plain text, check if it contains out-of-topic rejection keywords
+  const lower = responseText.toLowerCase();
+  if (lower.includes('out of topic') || lower.includes('walang kaugnayan')) {
+    return {
+      isOutOfTopic: true,
+      message: responseText,
+    };
+  }
+
+  return {
+    isOutOfTopic: false,
+    reply: responseText || 'Paumanhin, hindi ako nakabuo ng sagot sa pagkakataong ito.',
+  };
 }
 
 /**
