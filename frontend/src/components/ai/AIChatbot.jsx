@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import client from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
+import UserAvatar from '../common/UserAvatar';
 import {
   MessageSquare,
   X,
@@ -242,7 +243,7 @@ const AIChatbot = () => {
                   )}
                 </div>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                  Gemini 3.8 Flash • Powered AI Tutor
+                  AI Study Tutor • Subject Guardrails Active
                 </p>
               </div>
             </div>
@@ -371,15 +372,15 @@ const AIChatbot = () => {
                         isUser ? 'flex-row-reverse' : 'flex-row'
                       }`}
                     >
-                      <div
-                        className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 ${
-                          isUser
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-indigo-600 dark:bg-indigo-500 text-white shadow-sm'
-                        }`}
-                      >
-                        {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
-                      </div>
+                      {isUser ? (
+                        <div className="w-8 h-8 shrink-0 rounded-full overflow-hidden shadow-sm ring-2 ring-blue-500/30">
+                          <UserAvatar user={user} size="xs" className="w-8 h-8" />
+                        </div>
+                      ) : (
+                        <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-sm shadow-blue-500/25 flex items-center justify-center shrink-0">
+                          <Bot className="w-4 h-4" />
+                        </div>
+                      )}
 
                       <div
                         className={`max-w-[82%] p-3.5 rounded-2xl leading-relaxed whitespace-pre-wrap break-words ${
@@ -404,7 +405,7 @@ const AIChatbot = () => {
 
                 {loading && (
                   <div className="flex gap-3 text-xs">
-                    <div className="w-7 h-7 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm shadow-blue-500/25">
                       <Bot className="w-4 h-4" />
                     </div>
                     <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 flex items-center gap-2">

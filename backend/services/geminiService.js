@@ -21,10 +21,12 @@ function getResolvedModelName() {
 }
 
 const FLASH_MODELS = [
+  'gemini-3.1-flash-lite-preview',
+  'gemini-3-flash-preview',
+  'gemini-3.1-flash-lite',
+  'gemini-3.8-flash',
   'gemini-3.6-flash',
   'gemini-3.5-flash',
-  'gemini-3.8-flash',
-  'gemini-3.7-flash',
 ];
 
 /**
@@ -355,21 +357,34 @@ ${subjectListStr}
    }
 `;
 
-  // Build contents history
-  const contents = [
-    { role: 'user', parts: [{ text: systemInstruction }] },
-    ...messages.map((m) => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.content }],
-    })),
-  ];
+  // Build sanitized alternating contents history
+  const contents = [];
+  for (const m of messages) {
+    if (!m || !m.content) continue;
+    const role = m.role === 'assistant' ? 'model' : 'user';
+    if (contents.length > 0 && contents[contents.length - 1].role === role) {
+      contents[contents.length - 1].parts[0].text += `\n${m.content}`;
+    } else {
+      contents.push({
+        role,
+        parts: [{ text: m.content }],
+      });
+    }
+  }
+
+  // Ensure first turn starts with user
+  if (contents.length > 0 && contents[0].role !== 'user') {
+    contents.shift();
+  }
 
   const response = await generateContentWithFallback(ai, {
     primaryModel: modelName,
-    contents: contents,
+    contents: contents.length > 0 ? contents : [{ role: 'user', parts: [{ text: 'Kumusta' }] }],
     config: {
+      systemInstruction,
       temperature: 0.1,
-      maxOutputTokens: 200, // Hard stop to ensure concise responses
+      responseMimeType: 'application/json',
+      maxOutputTokens: 800,
     },
   });
 
