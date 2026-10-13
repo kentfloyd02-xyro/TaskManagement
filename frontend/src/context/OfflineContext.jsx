@@ -91,6 +91,23 @@ export const OfflineProvider = ({ children }) => {
     }
   };
 
+  const getCachedTasks = () => {
+    try {
+      const raw = localStorage.getItem('student_cached_tasks');
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  };
+
+  const setCachedTasks = (tasksList) => {
+    try {
+      if (Array.isArray(tasksList)) {
+        localStorage.setItem('student_cached_tasks', JSON.stringify(tasksList));
+      }
+    } catch (e) {}
+  };
+
   return (
     <OfflineContext.Provider
       value={{
@@ -99,6 +116,9 @@ export const OfflineProvider = ({ children }) => {
         syncStatus,
         pendingQueueCount,
         triggerAutoSync,
+        getCachedTasks,
+        setCachedTasks,
+        enqueueAction: () => {},
       }}
     >
       {children}

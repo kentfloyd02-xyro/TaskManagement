@@ -40,9 +40,16 @@ export const isServerReachable = async () => {
 
 /**
  * Check if a stored item belongs to the active logged-in user
+ * Strictly ignores any legacy dummy/seed data.
  */
 const isItemForUser = (item, currentUser) => {
   if (!item) return false;
+
+  // Never return fake/seed items
+  if (item.isSeed || String(item._id).startsWith('seed_')) {
+    return false;
+  }
+
   if (!currentUser) return true;
 
   const currentId = String(currentUser._id || '');
@@ -53,16 +60,18 @@ const isItemForUser = (item, currentUser) => {
     ? String(item.user._id || '')
     : String(item.user || '');
 
-  // 1. Direct ID match
-  if (itemUserId && itemUserId === currentId) return true;
+  // 1. Direct ID match (e.g. 6aca7f3babef42f61303a276)
+  if (itemUserId && (itemUserId === currentId || (isAdmin && itemUserId === '6aca7f3babef42f61303a276'))) {
+    return true;
+  }
 
   // 2. Direct email match
   if (item.userEmail && item.userEmail.trim().toLowerCase() === currentEmail) return true;
   if (typeof item.user === 'object' && item.user?.email && item.user.email.trim().toLowerCase() === currentEmail) return true;
 
-  // 3. Admin permissions (Admin can see seed admin data, items without owner, or admin-tagged items)
+  // 3. Admin fallback (admin can see items tagged with admin role or admin email)
   if (isAdmin) {
-    if (!itemUserId || itemUserId === 'seed_admin_kentfloyd' || item.isSeed || item.userRole === 'admin') {
+    if (item.userRole === 'admin' || !itemUserId) {
       return true;
     }
   }
