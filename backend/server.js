@@ -82,6 +82,7 @@ app.use('/api/friends', require('./routes/friendRoutes'));
 app.use('/api/chat', require('./routes/chatRoutes'));
 app.use('/api/schedule', require('./routes/scheduleRoutes'));
 app.use('/api/gamification', require('./routes/gamificationRoutes'));
+app.use('/api/sync', require('./routes/syncRoutes'));
 
 
 // Health check endpoint

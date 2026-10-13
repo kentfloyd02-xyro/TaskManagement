@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { dbPutMany } from '../db/indexedDB';
+import { dbUpsertAndDeduplicate, dbPutMany } from '../db/indexedDB';
 import { handleOfflineGet, handleOfflineMutation } from '../utils/offlineSync';
 
 const api = axios.create({
@@ -28,23 +28,39 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// Natural key extractors for deduplication
+const taskNaturalKey = (t) => `${(t.title || '').trim().toLowerCase()}_${t.academicPeriod || ''}`;
+const schedNaturalKey = (s) =>
+  `${(s.subjectCode || s.subjectName || '').trim().toLowerCase()}_${(s.days || []).join('-')}_${s.startTime || ''}`;
+const subNaturalKey = (s) => `${(s.code || s.name || '').trim().toLowerCase()}`;
+const revNaturalKey = (r) => `${(r.title || r.subject || '').trim().toLowerCase()}_${r.category || ''}`;
+
 // Response interceptor
 api.interceptors.response.use(
   (response) => {
-    // Background auto-cache into IndexedDB on successful GET
+    // Background auto-cache and deduplicate into IndexedDB on successful GET
     const url = response.config?.url || '';
     if (response.config?.method?.toLowerCase() === 'get' && response.data) {
       try {
-        if (url.startsWith('/tasks') && Array.isArray(response.data.tasks)) {
-          dbPutMany('tasks', response.data.tasks).catch(() => {});
-        } else if (url.startsWith('/schedule') && Array.isArray(response.data.schedules)) {
-          dbPutMany('schedules', response.data.schedules).catch(() => {});
-        } else if (url.startsWith('/subjects') && Array.isArray(response.data.data)) {
-          dbPutMany('subjects', response.data.data).catch(() => {});
+        if (url.startsWith('/tasks')) {
+          const list = response.data.data || response.data.tasks;
+          if (Array.isArray(list)) {
+            dbUpsertAndDeduplicate('tasks', list, taskNaturalKey).catch(() => {});
+          }
+        } else if (url.startsWith('/schedule')) {
+          const list = response.data.schedules || response.data.data;
+          if (Array.isArray(list)) {
+            dbUpsertAndDeduplicate('schedules', list, schedNaturalKey).catch(() => {});
+          }
+        } else if (url.startsWith('/subjects')) {
+          const list = response.data.data || response.data.subjects;
+          if (Array.isArray(list)) {
+            dbUpsertAndDeduplicate('subjects', list, subNaturalKey).catch(() => {});
+          }
         } else if (url.startsWith('/reviewer/materials')) {
           const mats = response.data.data || response.data.materials;
           if (Array.isArray(mats)) {
-            dbPutMany('reviewers', mats).catch(() => {});
+            dbUpsertAndDeduplicate('reviewers', mats, revNaturalKey).catch(() => {});
           }
         }
       } catch (e) {}

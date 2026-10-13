@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import api from '../api/client';
 import { runBackgroundAutoSync } from '../utils/offlineSync';
-import { dbGetSyncQueue } from '../db/indexedDB';
+import { dbGetSyncQueue, syncAllMongoDBDataToIndexedDB } from '../db/indexedDB';
 
 const OfflineContext = createContext();
 
@@ -81,6 +82,7 @@ export const OfflineProvider = ({ children }) => {
     setIsSyncing(true);
     try {
       await runBackgroundAutoSync();
+      await syncAllMongoDBDataToIndexedDB(api);
       await checkPendingQueue();
     } catch (e) {
       console.warn('Auto-sync execution error:', e);

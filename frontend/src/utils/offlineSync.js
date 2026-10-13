@@ -335,30 +335,47 @@ export const runBackgroundAutoSync = async () => {
           syncedCount++;
         } else if (item.method === 'POST') {
           const res = await client.post(item.url, item.payload);
-          // If server created item, replace local tempId in IndexedDB with real _id
-          if (res.data?.task?._id && item.tempId && item.entity === 'tasks') {
-            await dbDelete('tasks', item.tempId);
-            await dbPut('tasks', res.data.task);
-          } else if (res.data?.schedule?._id && item.tempId && item.entity === 'schedules') {
-            await dbDelete('schedules', item.tempId);
-            await dbPut('schedules', res.data.schedule);
-          } else if (res.data?.data?._id && item.tempId && item.entity === 'subjects') {
-            await dbDelete('subjects', item.tempId);
-            await dbPut('subjects', res.data.data);
-          } else if (res.data?.material?._id && item.tempId && item.entity === 'reviewers') {
-            await dbDelete('reviewers', item.tempId);
-            await dbPut('reviewers', res.data.material);
+          const serverCreatedItem =
+            res.data?.data ||
+            res.data?.task ||
+            res.data?.schedule ||
+            res.data?.material ||
+            res.data?.subject;
+
+          // Always remove the temporary offline ID from IndexedDB to strictly prevent duplicates
+          if (item.tempId && item.entity) {
+            await dbDelete(item.entity, item.tempId);
           }
+
+          // Store official MongoDB created item with its real _id
+          if (serverCreatedItem && serverCreatedItem._id && item.entity) {
+            await dbPut(item.entity, serverCreatedItem);
+          }
+
           await dbRemoveFromSyncQueue(item.id);
           syncedCount++;
         } else if (item.method === 'PUT') {
-          await client.put(item.url, item.payload);
+          const res = await client.put(item.url, item.payload);
+          const updatedItem =
+            res.data?.data ||
+            res.data?.task ||
+            res.data?.schedule ||
+            res.data?.material ||
+            res.data?.subject;
+
+          if (updatedItem && updatedItem._id && item.entity) {
+            await dbPut(item.entity, updatedItem);
+          }
+
           await dbRemoveFromSyncQueue(item.id);
           syncedCount++;
         } else if (item.method === 'DELETE') {
           // If item was tempId, don't send to server since server never saw it
           if (!item.tempId?.startsWith('offline_')) {
             await client.delete(item.url);
+          }
+          if (item.tempId && item.entity) {
+            await dbDelete(item.entity, item.tempId);
           }
           await dbRemoveFromSyncQueue(item.id);
           syncedCount++;

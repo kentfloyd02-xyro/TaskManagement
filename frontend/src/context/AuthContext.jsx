@@ -7,6 +7,7 @@ import {
   dbVerifyOfflineCredentials,
   dbAddToSyncQueue,
   syncExistingAccountsFromCloud,
+  syncAllMongoDBDataToIndexedDB,
 } from '../db/indexedDB';
 import { runBackgroundAutoSync } from '../utils/offlineSync';
 
@@ -33,22 +34,22 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [theme, setTheme] = useState(() => localStorage.getItem('student_theme') || 'dark');
 
-  // Initialize IndexedDB and automatically sync all existing accounts
+  // Initialize IndexedDB and automatically sync all MongoDB data with zero duplicates
   useEffect(() => {
-    // 1. Ensure IndexedDB is initialized and pre-seeded with existing accounts
+    // 1. Ensure IndexedDB is initialized and pre-seeded
     openDB().catch((err) => console.warn('IndexedDB initialization notice:', err));
 
-    // 2. Fetch all cloud accounts and store them in IndexedDB for 100% offline access
-    const syncAccounts = () => {
+    // 2. Fetch and sync ALL collections from MongoDB to IndexedDB (Tasks, Schedules, Subjects, Reviewers, Users)
+    const syncAllData = () => {
       if (navigator.onLine) {
-        syncExistingAccountsFromCloud(api).catch(() => {});
+        syncAllMongoDBDataToIndexedDB(api, user).catch(() => {});
       }
     };
 
-    syncAccounts();
-    window.addEventListener('online', syncAccounts);
-    return () => window.removeEventListener('online', syncAccounts);
-  }, []);
+    syncAllData();
+    window.addEventListener('online', syncAllData);
+    return () => window.removeEventListener('online', syncAllData);
+  }, [user?._id]);
 
   // Apply theme class to <html> element
   useEffect(() => {
@@ -96,6 +97,8 @@ export const AuthProvider = ({ children }) => {
             if (userData.themePreference) {
               setTheme(userData.themePreference);
             }
+            // Auto-sync full MongoDB data to IndexedDB
+            syncAllMongoDBDataToIndexedDB(api, userData).catch(() => {});
           }
         } catch (err) {
           // If 401 Unauthorized specifically, log out. If network error, keep offline session!
@@ -152,6 +155,10 @@ export const AuthProvider = ({ children }) => {
           if (userData.themePreference) {
             setTheme(userData.themePreference);
           }
+
+          // Automatically sync all MongoDB collections to IndexedDB without duplicates
+          syncAllMongoDBDataToIndexedDB(api, userData).catch(() => {});
+
           return res.data;
         }
       } catch (err) {

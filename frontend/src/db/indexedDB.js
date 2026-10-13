@@ -391,3 +391,154 @@ export const dbGetMeta = async (key) => {
   const res = await dbGetById('meta', key);
   return res ? res.value : null;
 };
+
+// ==========================================
+// DEDUPLICATION & FULL MONGODB DATA SYNC
+// ==========================================
+
+/**
+ * Upsert items and eliminate any temporary offline duplicates
+ * or duplicate entries matching the natural key.
+ */
+export const dbUpsertAndDeduplicate = async (storeName, incomingItems, naturalKeyFn) => {
+  if (!Array.isArray(incomingItems) || incomingItems.length === 0) return [];
+  const db = await openDB();
+
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readwrite');
+    const store = tx.objectStore(storeName);
+
+    const getAllReq = store.getAll();
+    getAllReq.onsuccess = () => {
+      const existingItems = getAllReq.result || [];
+      const toDeleteIds = new Set();
+
+      incomingItems.forEach((incoming) => {
+        if (!incoming || !incoming._id) return;
+
+        const incomingNaturalKey = naturalKeyFn ? naturalKeyFn(incoming) : null;
+
+        // Check for matching offline temporary items or duplicate natural keys
+        existingItems.forEach((existing) => {
+          if (!existing || !existing._id) return;
+          if (existing._id === incoming._id) return;
+
+          const isTemp = String(existing._id).startsWith('offline_');
+          if (incomingNaturalKey && naturalKeyFn) {
+            const existingNaturalKey = naturalKeyFn(existing);
+            if (existingNaturalKey && existingNaturalKey === incomingNaturalKey) {
+              toDeleteIds.add(existing._id);
+            }
+          } else if (isTemp && incoming._id) {
+            if (existing.title && incoming.title && existing.title.trim().toLowerCase() === incoming.title.trim().toLowerCase()) {
+              toDeleteIds.add(existing._id);
+            }
+          }
+        });
+
+        // Save official MongoDB record
+        store.put(incoming);
+      });
+
+      // Delete old redundant temporary drafts
+      toDeleteIds.forEach((id) => {
+        store.delete(id);
+      });
+    };
+
+    tx.oncomplete = () => resolve(incomingItems);
+    tx.onerror = () => reject(tx.error);
+  });
+};
+
+/**
+ * Synchronizes ALL user data from MongoDB to IndexedDB
+ * (Tasks, Schedules, Subjects, Reviewers, Users)
+ * with automatic de-duplication to guarantee no duplicated records.
+ */
+export const syncAllMongoDBDataToIndexedDB = async (apiClient, currentUser = null) => {
+  if (!navigator.onLine || !apiClient) return null;
+
+  try {
+    let tasks = [];
+    let schedules = [];
+    let subjects = [];
+    let reviewers = [];
+
+    // 1. Try dedicated full sync endpoint first
+    try {
+      const fullRes = await apiClient.get('/sync/full-data');
+      if (fullRes.data?.success && fullRes.data.data) {
+        tasks = fullRes.data.data.tasks || [];
+        schedules = fullRes.data.data.schedules || [];
+        subjects = fullRes.data.data.subjects || [];
+        reviewers = fullRes.data.data.reviewers || [];
+      }
+    } catch (fullErr) {
+      // Fallback: Parallel individual collection endpoints
+      const [tRes, sRes, subRes, rRes] = await Promise.allSettled([
+        apiClient.get('/tasks'),
+        apiClient.get('/schedule'),
+        apiClient.get('/subjects'),
+        apiClient.get('/reviewer/materials'),
+      ]);
+
+      if (tRes.status === 'fulfilled' && tRes.value.data) {
+        tasks = tRes.value.data.data || tRes.value.data.tasks || [];
+      }
+      if (sRes.status === 'fulfilled' && sRes.value.data) {
+        schedules = sRes.value.data.schedules || sRes.value.data.data || [];
+      }
+      if (subRes.status === 'fulfilled' && subRes.value.data) {
+        subjects = subRes.value.data.data || subRes.value.data.subjects || [];
+      }
+      if (rRes.status === 'fulfilled' && rRes.value.data) {
+        reviewers = rRes.value.data.data || rRes.value.data.materials || [];
+      }
+    }
+
+    // 2. Define natural keys for each collection to ensure exact deduplication
+    const taskNaturalKey = (t) => `${(t.title || '').trim().toLowerCase()}_${t.academicPeriod || ''}`;
+    const schedNaturalKey = (s) =>
+      `${(s.subjectCode || s.subjectName || '').trim().toLowerCase()}_${(s.days || []).join('-')}_${s.startTime || ''}`;
+    const subNaturalKey = (s) => `${(s.code || s.name || '').trim().toLowerCase()}`;
+    const revNaturalKey = (r) => `${(r.title || r.subject || '').trim().toLowerCase()}_${r.category || ''}`;
+
+    await Promise.all([
+      dbUpsertAndDeduplicate('tasks', tasks, taskNaturalKey),
+      dbUpsertAndDeduplicate('schedules', schedules, schedNaturalKey),
+      dbUpsertAndDeduplicate('subjects', subjects, subNaturalKey),
+      dbUpsertAndDeduplicate('reviewers', reviewers, revNaturalKey),
+      syncExistingAccountsFromCloud(apiClient),
+    ]);
+
+    // 3. Dispatch global sync event
+    window.dispatchEvent(
+      new CustomEvent('student-planner-full-sync-complete', {
+        detail: {
+          timestamp: new Date().toISOString(),
+          counts: {
+            tasks: tasks.length,
+            schedules: schedules.length,
+            subjects: subjects.length,
+            reviewers: reviewers.length,
+          },
+        },
+      })
+    );
+
+    return {
+      success: true,
+      counts: {
+        tasks: tasks.length,
+        schedules: schedules.length,
+        subjects: subjects.length,
+        reviewers: reviewers.length,
+      },
+    };
+  } catch (err) {
+    console.warn('syncAllMongoDBDataToIndexedDB notice:', err);
+    return null;
+  }
+};
+
