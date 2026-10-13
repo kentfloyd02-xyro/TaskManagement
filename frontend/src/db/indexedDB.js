@@ -477,7 +477,8 @@ export const dbUpsertAndDeduplicate = async(storeName, incomingItems, naturalKey
  * with automatic de-duplication to guarantee no duplicated records.
  */
 export const syncAllMongoDBDataToIndexedDB = async(apiClient, currentUser = null) => {
-    if (!navigator.onLine || !apiClient) return null;
+    const token = localStorage.getItem('student_token') || sessionStorage.getItem('student_token');
+    if (!navigator.onLine || !apiClient || !token) return null;
 
     try {
         let tasks = [];

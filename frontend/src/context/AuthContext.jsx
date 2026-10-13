@@ -41,15 +41,17 @@ export const AuthProvider = ({ children }) => {
 
     // 2. Fetch and sync ALL collections from MongoDB to IndexedDB (Tasks, Schedules, Subjects, Reviewers, Users)
     const syncAllData = () => {
-      if (navigator.onLine) {
+      if (navigator.onLine && token && user) {
         syncAllMongoDBDataToIndexedDB(api, user).catch(() => {});
       }
     };
 
-    syncAllData();
+    if (token && user) {
+      syncAllData();
+    }
     window.addEventListener('online', syncAllData);
     return () => window.removeEventListener('online', syncAllData);
-  }, [user?._id]);
+  }, [user?._id, token]);
 
   // Apply theme class to <html> element
   useEffect(() => {

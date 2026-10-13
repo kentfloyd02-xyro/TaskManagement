@@ -1,4 +1,4 @@
-const CACHE_NAME = 'student-planner-cache-v3';
+const CACHE_NAME = 'student-planner-cache-v4';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -40,32 +40,51 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Network-first for HTML, JS, and CSS so code updates apply instantly
+  if (
+    event.request.mode === 'navigate' ||
+    event.request.url.includes('.js') ||
+    event.request.url.includes('.css') ||
+    event.request.url.includes('/src/') ||
+    event.request.url.includes('/@')
+  ) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+          }
+          return response;
+        })
+        .catch(() => {
+          return caches.match(event.request).then((cached) => {
+            if (cached) return cached;
+            if (event.request.mode === 'navigate') {
+              return caches.match('/index.html');
+            }
+          });
+        })
+    );
+    return;
+  }
+
+  // Cache-first for images and icons
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
         return cachedResponse;
       }
       return fetch(event.request).then((response) => {
-        // Cache static assets
-        if (
-          response &&
-          response.status === 200 &&
-          (event.request.url.includes('.js') ||
-            event.request.url.includes('.css') ||
-            event.request.url.includes('.png') ||
-            event.request.url.includes('.svg'))
-        ) {
+        if (response && response.status === 200) {
           const responseToCache = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, responseToCache);
           });
         }
         return response;
-      }).catch(() => {
-        // Fallback for navigation
-        if (event.request.mode === 'navigate') {
-          return caches.match('/index.html');
-        }
       });
     })
   );

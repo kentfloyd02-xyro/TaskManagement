@@ -230,7 +230,7 @@ const Sidebar = ({ onQuickAddClick }) => {
               title="Install App sa Android o PC"
               className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-xs font-bold bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900 transition-colors cursor-pointer"
             >
-              <Download className="w-3.5 h-3.5" />
+              <Download className="w-2.5 h-3.5" />
               <span>Install</span>
             </button>
 

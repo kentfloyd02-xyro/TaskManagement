@@ -78,7 +78,8 @@ export const OfflineProvider = ({ children }) => {
   }, []);
 
   const triggerAutoSync = async () => {
-    if (!navigator.onLine || isSyncing) return;
+    const hasToken = localStorage.getItem('student_token') || sessionStorage.getItem('student_token');
+    if (!navigator.onLine || isSyncing || !hasToken) return;
     setIsSyncing(true);
     try {
       await runBackgroundAutoSync();
