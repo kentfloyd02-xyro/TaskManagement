@@ -11,23 +11,20 @@ function getResolvedModelName() {
   const envModel = process.env.GEMINI_MODEL;
   if (
     !envModel ||
-    envModel === 'gemini-2.5-flash' ||
-    envModel === 'gemini-2.0-flash' ||
-    envModel === 'gemini-1.5-flash' ||
-    envModel.includes('2.5') ||
+    envModel.includes('1.5') ||
     envModel.includes('2.0') ||
-    envModel.includes('1.5')
+    envModel.includes('2.5')
   ) {
-    return 'gemini-3.8-flash';
+    return 'gemini-3.6-flash';
   }
   return envModel;
 }
 
 const FLASH_MODELS = [
+  'gemini-3.6-flash',
+  'gemini-3.5-flash',
   'gemini-3.8-flash',
-  'gemini-2.5-flash',
-  'gemini-2.0-flash',
-  'gemini-1.5-flash',
+  'gemini-3.7-flash',
 ];
 
 /**
@@ -79,13 +76,22 @@ async function generateContentWithFallback(ai, { contents, config = {}, primaryM
 
   let cleanMsg = 'Kasalukuyang mataas ang demand sa Google AI servers. Pakisubukan muli makalipas ang ilang sandali.';
   if (lastError?.message) {
-    try {
-      const parsed = JSON.parse(lastError.message);
-      if (parsed.error?.message) {
-        cleanMsg = parsed.error.message;
+    const raw = lastError.message.toLowerCase();
+    if (raw.includes('503') || raw.includes('high demand') || raw.includes('unavailable')) {
+      cleanMsg = 'Kasalukuyang mataas ang demand sa Google AI cluster. Pakisubukan muli makalipas ang ilang segundo.';
+    } else if (raw.includes('quota') || raw.includes('429') || raw.includes('resource_exhausted')) {
+      cleanMsg = 'Pansamantalang naabot ang per-minute rate limit ng AI. Pakihintay lamang ng 1 minuto bago magpadala muli.';
+    } else if (raw.includes('not found') || raw.includes('not supported')) {
+      cleanMsg = 'Kasalukuyang nag-a-update ang AI model service. Pakisubukan muli makalipas ang ilang sandali.';
+    } else {
+      try {
+        const parsed = JSON.parse(lastError.message);
+        if (parsed.error?.message) {
+          cleanMsg = parsed.error.message;
+        }
+      } catch (_) {
+        cleanMsg = lastError.message;
       }
-    } catch (_) {
-      cleanMsg = lastError.message;
     }
   }
   const finalError = new Error(cleanMsg);
