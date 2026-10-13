@@ -20,10 +20,12 @@ const Login = () => {
     setLoading(true);
 
     try {
-      await login(email, password, rememberMe);
-      navigate('/dashboard');
+      const res = await login(email, password, rememberMe);
+      if (res?.success) {
+        navigate('/dashboard', { replace: true });
+      }
     } catch (err) {
-      setError(err.response?.data?.message || 'Invalid email or password.');
+      setError(err.response?.data?.message || err.message || 'Invalid email or password.');
     } finally {
       setLoading(false);
     }

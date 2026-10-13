@@ -62,10 +62,11 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('student_theme', theme);
   }, [theme]);
 
-  // Check current user session on mount
+  // Check current user session on mount ONLY
   useEffect(() => {
     const verifyUser = async () => {
-      if (token) {
+      const activeToken = localStorage.getItem('student_token') || sessionStorage.getItem('student_token');
+      if (activeToken) {
         // If offline, trust local saved session / IndexedDB
         if (!navigator.onLine) {
           const cachedUser =
@@ -121,7 +122,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     verifyUser();
-  }, [token]);
+  }, []); // Run strictly on mount to avoid race conditions with login()
 
   // LOGIN (With IndexedDB Offline Support)
   const login = async (email, password, rememberMe = false) => {
@@ -133,31 +134,33 @@ export const AuthProvider = ({ children }) => {
         const res = await api.post('/auth/login', { email: cleanEmail, password });
         if (res.data?.success) {
           const userData = res.data.user;
+          const newToken = res.data.token;
           if (cleanEmail === 'kentfloyd02@gmail.com') {
             userData.role = 'admin';
           }
-          setToken(res.data.token);
-          setUser(userData);
 
-          // Save into IndexedDB for future offline logins!
-          await dbSaveUser(userData, password);
-
-          // Clean old states
+          // Clean old storage and write new session FIRST before updating React state
           localStorage.removeItem('student_token');
           localStorage.removeItem('student_user');
           sessionStorage.removeItem('student_token');
           sessionStorage.removeItem('student_user');
 
           const storage = rememberMe ? localStorage : sessionStorage;
-          storage.setItem('student_token', res.data.token);
+          storage.setItem('student_token', newToken);
           storage.setItem('student_user', JSON.stringify(userData));
+
+          // Set state immediately
+          setToken(newToken);
+          setUser(userData);
+          setLoading(false);
 
           if (userData.themePreference) {
             setTheme(userData.themePreference);
           }
 
-          // Automatically sync all MongoDB collections to IndexedDB without duplicates
-          syncAllMongoDBDataToIndexedDB(api, userData).catch(() => {});
+          // Background asynchronous IndexedDB caching without blocking navigation
+          dbSaveUser(userData, password).catch((e) => console.warn('dbSaveUser notice:', e));
+          syncAllMongoDBDataToIndexedDB(api, userData).catch((e) => console.warn('syncAllMongoDB notice:', e));
 
           return res.data;
         }
@@ -175,12 +178,19 @@ export const AuthProvider = ({ children }) => {
     const localUser = await dbVerifyOfflineCredentials(cleanEmail, password);
     if (localUser) {
       const dummyToken = `offline_token_${Date.now()}`;
-      setToken(dummyToken);
-      setUser(localUser);
+
+      localStorage.removeItem('student_token');
+      localStorage.removeItem('student_user');
+      sessionStorage.removeItem('student_token');
+      sessionStorage.removeItem('student_user');
 
       const storage = rememberMe ? localStorage : sessionStorage;
       storage.setItem('student_token', dummyToken);
       storage.setItem('student_user', JSON.stringify(localUser));
+
+      setToken(dummyToken);
+      setUser(localUser);
+      setLoading(false);
 
       return {
         success: true,
