@@ -1,6 +1,7 @@
 const Task = require('../models/Task');
 const path = require('path');
 const fs = require('fs');
+const { emitUserDataChange } = require('../utils/socketSync');
 
 // @desc    Get tasks with filters (status, academicPeriod, priority, subject, project, isArchived, search)
 // @route   GET /api/tasks
@@ -133,6 +134,7 @@ exports.createTask = async (req, res) => {
         .populate('subject', 'code name color')
         .populate('project', 'title status');
 
+      emitUserDataChange(req, 'tasks', 'update', populatedExisting);
       return res.status(200).json({ success: true, data: populatedExisting, deduplicated: true });
     }
 
@@ -156,6 +158,7 @@ exports.createTask = async (req, res) => {
       .populate('subject', 'code name color')
       .populate('project', 'title status');
 
+    emitUserDataChange(req, 'tasks', 'create', populatedTask);
     res.status(201).json({ success: true, data: populatedTask });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -187,6 +190,7 @@ exports.updateTask = async (req, res) => {
       .populate('subject', 'code name color')
       .populate('project', 'title status');
 
+    emitUserDataChange(req, 'tasks', 'update', task);
     res.json({ success: true, data: task });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -219,6 +223,7 @@ exports.updateTaskStatus = async (req, res) => {
       .populate('subject', 'code name color')
       .populate('project', 'title status');
 
+    emitUserDataChange(req, 'tasks', 'update', populatedTask);
     res.json({ success: true, data: populatedTask });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -363,6 +368,7 @@ exports.deleteTask = async (req, res) => {
 
     await task.deleteOne();
 
+    emitUserDataChange(req, 'tasks', 'delete', { _id: req.params.id });
     res.json({ success: true, message: 'Task permanently deleted.' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

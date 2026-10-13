@@ -8,6 +8,7 @@ const {
   checkAndIncrementAiUsage,
   generateReviewQuestions,
 } = require('../services/geminiService');
+const { emitUserDataChange } = require('../utils/socketSync');
 
 // Configure multer memory storage for fast file parsing
 const upload = multer({
@@ -134,6 +135,7 @@ router.post('/generate', protect, upload.single('file'), async (req, res) => {
       existingMaterial.questionTypePreference = questionTypePreference;
       await existingMaterial.save();
 
+      emitUserDataChange(req, 'reviewers', 'update', existingMaterial);
       return res.status(200).json({
         success: true,
         message: `Successfully refreshed existing ${category.toUpperCase()}!`,
@@ -157,6 +159,7 @@ router.post('/generate', protect, upload.single('file'), async (req, res) => {
       sourceFileName: req.file.originalname,
     });
 
+    emitUserDataChange(req, 'reviewers', 'create', newMaterial);
     res.status(201).json({
       success: true,
       message: `Successfully generated ${generatedQuestions.length} questions for ${category.toUpperCase()}!`,
@@ -224,6 +227,7 @@ router.delete('/materials/:id', protect, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Review material not found' });
     }
 
+    emitUserDataChange(req, 'reviewers', 'delete', { _id: req.params.id });
     res.json({ success: true, message: 'Review material deleted successfully' });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Error deleting material' });

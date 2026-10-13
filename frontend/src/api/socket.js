@@ -7,6 +7,9 @@ const getSocketUrl = () => {
     // Strip trailing '/api' from url
     return apiUrl.replace(/\/api\/?$/, '');
   }
+  if (typeof window !== 'undefined' && window.location.hostname && window.location.hostname !== 'localhost') {
+    return `http://${window.location.hostname}:5000`;
+  }
   return 'http://localhost:5000';
 };
 

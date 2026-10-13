@@ -33,6 +33,12 @@ io.on('connection', (socket) => {
     socket.join(roomId);
   });
 
+  socket.on('join_user_room', (userId) => {
+    if (userId) {
+      socket.join(`user_${userId}`);
+    }
+  });
+
   socket.on('leave_room', (roomId) => {
     socket.leave(roomId);
   });

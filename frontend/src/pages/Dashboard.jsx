@@ -82,6 +82,15 @@ const Dashboard = () => {
     };
 
     fetchDashboard();
+
+    const handleSyncUpdate = () => fetchDashboard();
+    window.addEventListener('student-planner-data-updated', handleSyncUpdate);
+    window.addEventListener('student-planner-full-sync-complete', handleSyncUpdate);
+
+    return () => {
+      window.removeEventListener('student-planner-data-updated', handleSyncUpdate);
+      window.removeEventListener('student-planner-full-sync-complete', handleSyncUpdate);
+    };
   }, [refreshTrigger]);
 
   if (loading && !summary) {

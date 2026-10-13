@@ -48,6 +48,15 @@ const Subjects = () => {
 
   useEffect(() => {
     fetchSubjects();
+
+    const handleSyncUpdate = () => fetchSubjects();
+    window.addEventListener('student-planner-data-updated', handleSyncUpdate);
+    window.addEventListener('student-planner-full-sync-complete', handleSyncUpdate);
+
+    return () => {
+      window.removeEventListener('student-planner-data-updated', handleSyncUpdate);
+      window.removeEventListener('student-planner-full-sync-complete', handleSyncUpdate);
+    };
   }, [outletContext?.refreshTrigger]);
 
   const handleCreateSubject = async (e) => {

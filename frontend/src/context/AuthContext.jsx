@@ -147,9 +147,10 @@ export const AuthProvider = ({ children }) => {
           sessionStorage.removeItem('student_token');
           sessionStorage.removeItem('student_user');
 
-          const storage = rememberMe ? localStorage : sessionStorage;
-          storage.setItem('student_token', newToken);
-          storage.setItem('student_user', JSON.stringify(userData));
+          localStorage.setItem('student_token', newToken);
+          localStorage.setItem('student_user', JSON.stringify(userData));
+          sessionStorage.setItem('student_token', newToken);
+          sessionStorage.setItem('student_user', JSON.stringify(userData));
 
           // Set state immediately
           setToken(newToken);

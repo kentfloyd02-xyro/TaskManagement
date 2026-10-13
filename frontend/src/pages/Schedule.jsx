@@ -58,6 +58,15 @@ const Schedule = () => {
     if ('Notification' in window) {
       setPushStatus(Notification.permission);
     }
+
+    const handleSyncUpdate = () => fetchSchedule();
+    window.addEventListener('student-planner-data-updated', handleSyncUpdate);
+    window.addEventListener('student-planner-full-sync-complete', handleSyncUpdate);
+
+    return () => {
+      window.removeEventListener('student-planner-data-updated', handleSyncUpdate);
+      window.removeEventListener('student-planner-full-sync-complete', handleSyncUpdate);
+    };
   }, []);
 
   // Subscribe to real phone/browser push notifications

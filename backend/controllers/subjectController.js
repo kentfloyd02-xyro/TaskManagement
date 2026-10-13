@@ -1,5 +1,6 @@
 const Subject = require('../models/Subject');
 const Task = require('../models/Task');
+const { emitUserDataChange } = require('../utils/socketSync');
 
 // @desc    Get all subjects of user
 // @route   GET /api/subjects
@@ -47,6 +48,7 @@ exports.createSubject = async (req, res) => {
       if (schedule !== undefined) existingSubject.schedule = schedule;
       if (room !== undefined) existingSubject.room = room;
       await existingSubject.save();
+      emitUserDataChange(req, 'subjects', 'update', existingSubject);
       return res.status(200).json({ success: true, data: existingSubject, deduplicated: true });
     }
 
@@ -60,6 +62,7 @@ exports.createSubject = async (req, res) => {
       room: room || '',
     });
 
+    emitUserDataChange(req, 'subjects', 'create', subject);
     res.status(201).json({ success: true, data: subject });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -82,6 +85,7 @@ exports.updateSubject = async (req, res) => {
       runValidators: true,
     });
 
+    emitUserDataChange(req, 'subjects', 'update', subject);
     res.json({ success: true, data: subject });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -102,6 +106,7 @@ exports.toggleArchiveSubject = async (req, res) => {
     subject.isArchived = !subject.isArchived;
     await subject.save();
 
+    emitUserDataChange(req, 'subjects', 'update', subject);
     res.json({
       success: true,
       message: subject.isArchived ? 'Subject archived successfully!' : 'Subject restored successfully!',
@@ -128,6 +133,7 @@ exports.deleteSubject = async (req, res) => {
 
     await subject.deleteOne();
 
+    emitUserDataChange(req, 'subjects', 'delete', { _id: req.params.id });
     res.json({ success: true, message: 'Subject deleted successfully.' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

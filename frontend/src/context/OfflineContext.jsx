@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import api from '../api/client';
+import socket from '../api/socket';
 import { runBackgroundAutoSync } from '../utils/offlineSync';
 import { dbGetSyncQueue, syncAllMongoDBDataToIndexedDB } from '../db/indexedDB';
 
@@ -21,9 +22,26 @@ export const OfflineProvider = ({ children }) => {
     }
   };
 
+  const triggerAutoSync = async () => {
+    const hasToken =
+      localStorage.getItem('student_token') || sessionStorage.getItem('student_token');
+    if (!navigator.onLine || isSyncing || !hasToken) return;
+    setIsSyncing(true);
+    try {
+      await runBackgroundAutoSync();
+      await syncAllMongoDBDataToIndexedDB(api);
+      await checkPendingQueue();
+    } catch (e) {
+      console.warn('Auto-sync execution notice:', e);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   useEffect(() => {
     checkPendingQueue();
 
+    // 1. Connection state listeners
     const handleOnline = () => {
       setIsOnline(true);
       triggerAutoSync();
@@ -56,15 +74,62 @@ export const OfflineProvider = ({ children }) => {
     window.addEventListener('offline', handleOffline);
     window.addEventListener('student-planner-sync-complete', handleSyncComplete);
 
-    // Visibility change check (when user reopens phone screen / browser tab)
+    // 2. Visibility change & Focus checks (User unlocks phone or returns to app)
     const handleVisibility = () => {
       if (document.visibilityState === 'visible' && navigator.onLine) {
         triggerAutoSync();
       }
     };
-    document.addEventListener('visibilitychange', handleVisibility);
+    const handleFocus = () => {
+      if (navigator.onLine) {
+        triggerAutoSync();
+      }
+    };
 
-    // Initial sync if online
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('focus', handleFocus);
+
+    // 3. Socket.IO Real-Time Cross-Device User Sync
+    const joinUserRoom = () => {
+      try {
+        const rawUser = localStorage.getItem('student_user') || sessionStorage.getItem('student_user');
+        if (rawUser) {
+          const u = JSON.parse(rawUser);
+          if (u && u._id) {
+            socket.emit('join_user_room', u._id);
+          }
+        }
+      } catch (_) {}
+    };
+
+    joinUserRoom();
+    socket.on('connect', joinUserRoom);
+
+    // Live sync event received from another device (e.g. PC uploaded something)
+    const handleSocketDataChanged = async (payload) => {
+      console.log('[Live Device Sync Received]:', payload);
+      try {
+        await syncAllMongoDBDataToIndexedDB(api);
+        await checkPendingQueue();
+        window.dispatchEvent(
+          new CustomEvent('student-planner-data-updated', { detail: payload })
+        );
+      } catch (err) {
+        console.warn('Real-time sync ingestion notice:', err);
+      }
+    };
+
+    socket.on('sync_data_changed', handleSocketDataChanged);
+
+    // 4. Periodic background sync: checks every 15 seconds while online
+    const interval = setInterval(() => {
+      const token = localStorage.getItem('student_token') || sessionStorage.getItem('student_token');
+      if (navigator.onLine && token && !isSyncing) {
+        syncAllMongoDBDataToIndexedDB(api).catch(() => {});
+      }
+    }, 15000);
+
+    // Initial sync
     if (navigator.onLine) {
       triggerAutoSync();
     }
@@ -74,23 +139,12 @@ export const OfflineProvider = ({ children }) => {
       window.removeEventListener('offline', handleOffline);
       window.removeEventListener('student-planner-sync-complete', handleSyncComplete);
       document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('focus', handleFocus);
+      socket.off('connect', joinUserRoom);
+      socket.off('sync_data_changed', handleSocketDataChanged);
+      clearInterval(interval);
     };
   }, []);
-
-  const triggerAutoSync = async () => {
-    const hasToken = localStorage.getItem('student_token') || sessionStorage.getItem('student_token');
-    if (!navigator.onLine || isSyncing || !hasToken) return;
-    setIsSyncing(true);
-    try {
-      await runBackgroundAutoSync();
-      await syncAllMongoDBDataToIndexedDB(api);
-      await checkPendingQueue();
-    } catch (e) {
-      console.warn('Auto-sync execution error:', e);
-    } finally {
-      setIsSyncing(false);
-    }
-  };
 
   const getCachedTasks = () => {
     try {
@@ -99,14 +153,6 @@ export const OfflineProvider = ({ children }) => {
     } catch (e) {
       return [];
     }
-  };
-
-  const setCachedTasks = (tasksList) => {
-    try {
-      if (Array.isArray(tasksList)) {
-        localStorage.setItem('student_cached_tasks', JSON.stringify(tasksList));
-      }
-    } catch (e) {}
   };
 
   return (
@@ -118,8 +164,6 @@ export const OfflineProvider = ({ children }) => {
         pendingQueueCount,
         triggerAutoSync,
         getCachedTasks,
-        setCachedTasks,
-        enqueueAction: () => {},
       }}
     >
       {children}
@@ -127,4 +171,10 @@ export const OfflineProvider = ({ children }) => {
   );
 };
 
-export const useOffline = () => useContext(OfflineContext);
+export const useOffline = () => {
+  const context = useContext(OfflineContext);
+  if (!context) {
+    throw new Error('useOffline must be used within OfflineProvider');
+  }
+  return context;
+};

@@ -4,6 +4,7 @@ const { protect } = require('../middleware/auth');
 const ClassSchedule = require('../models/ClassSchedule');
 const User = require('../models/User');
 const { sendNotificationToUser } = require('../services/pushService');
+const { emitUserDataChange } = require('../utils/socketSync');
 
 /**
  * @route   GET /api/schedule
@@ -65,6 +66,7 @@ router.post('/', protect, async (req, res) => {
       existingSchedule.reminderMinutesBefore = Number(reminderMinutesBefore) || 15;
       existingSchedule.isReminderActive = !!isReminderActive;
       await existingSchedule.save();
+      emitUserDataChange(req, 'schedules', 'update', existingSchedule);
       return res.status(200).json({ success: true, schedule: existingSchedule, deduplicated: true });
     }
 
@@ -82,6 +84,7 @@ router.post('/', protect, async (req, res) => {
       isReminderActive: !!isReminderActive,
     });
 
+    emitUserDataChange(req, 'schedules', 'create', schedule);
     res.status(201).json({ success: true, schedule });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message || 'Error creating schedule' });
@@ -105,6 +108,7 @@ router.put('/:id', protect, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Schedule not found' });
     }
 
+    emitUserDataChange(req, 'schedules', 'update', schedule);
     res.json({ success: true, schedule });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Error updating schedule' });
@@ -127,6 +131,7 @@ router.delete('/:id', protect, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Schedule not found' });
     }
 
+    emitUserDataChange(req, 'schedules', 'delete', { _id: req.params.id });
     res.json({ success: true, message: 'Schedule deleted' });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Error deleting schedule' });

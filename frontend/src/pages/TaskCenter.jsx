@@ -64,6 +64,15 @@ const TaskCenter = () => {
 
   useEffect(() => {
     fetchAll();
+
+    const handleSyncUpdate = () => fetchAll();
+    window.addEventListener('student-planner-data-updated', handleSyncUpdate);
+    window.addEventListener('student-planner-full-sync-complete', handleSyncUpdate);
+
+    return () => {
+      window.removeEventListener('student-planner-data-updated', handleSyncUpdate);
+      window.removeEventListener('student-planner-full-sync-complete', handleSyncUpdate);
+    };
   }, [refreshTrigger, isOnline]);
 
   // Status Change Logic (used for both Drag & Drop and Dropdown selector)

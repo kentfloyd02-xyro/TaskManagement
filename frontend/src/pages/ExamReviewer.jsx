@@ -93,6 +93,15 @@ const ExamReviewer = () => {
 
   useEffect(() => {
     fetchMaterials();
+
+    const handleSyncUpdate = () => fetchMaterials();
+    window.addEventListener('student-planner-data-updated', handleSyncUpdate);
+    window.addEventListener('student-planner-full-sync-complete', handleSyncUpdate);
+
+    return () => {
+      window.removeEventListener('student-planner-data-updated', handleSyncUpdate);
+      window.removeEventListener('student-planner-full-sync-complete', handleSyncUpdate);
+    };
   }, [activeCategory, outletContext?.refreshTrigger]);
 
   // Timer countdown
