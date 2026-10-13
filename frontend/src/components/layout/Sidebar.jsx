@@ -208,7 +208,7 @@ const Sidebar = ({ onQuickAddClick }) => {
 
         {/* User Card & Settings Footer */}
         <div className="p-4 border-t border-slate-200/80 dark:border-slate-800/80 space-y-3 bg-slate-50/50 dark:bg-slate-900/30">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-baseline gap-2">
             <button
               onClick={toggleTheme}
               className="flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 shadow-2xs transition-all cursor-pointer"
@@ -230,8 +230,8 @@ const Sidebar = ({ onQuickAddClick }) => {
               title="Install App sa Android o PC"
               className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-xs font-bold bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900 transition-colors cursor-pointer"
             >
-              <Download className="w-2.5 h-3.5" />
-              <span>Install</span>
+              <Download className="w-3.5 h-3.5" />
+              <span>Install App</span>
             </button>
 
             <button
