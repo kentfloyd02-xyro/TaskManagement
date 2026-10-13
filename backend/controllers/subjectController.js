@@ -31,10 +31,29 @@ exports.createSubject = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please provide subject code and name.' });
     }
 
+    const cleanCode = code.trim();
+
+    // Prevent duplicates: Check if subject code already exists for this user
+    let existingSubject = await Subject.findOne({
+      user: req.user._id,
+      code: { $regex: new RegExp(`^${cleanCode.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') },
+      isArchived: false,
+    });
+
+    if (existingSubject) {
+      if (name) existingSubject.name = name.trim();
+      if (color) existingSubject.color = color;
+      if (instructor !== undefined) existingSubject.instructor = instructor;
+      if (schedule !== undefined) existingSubject.schedule = schedule;
+      if (room !== undefined) existingSubject.room = room;
+      await existingSubject.save();
+      return res.status(200).json({ success: true, data: existingSubject, deduplicated: true });
+    }
+
     const subject = await Subject.create({
       user: req.user._id,
-      code,
-      name,
+      code: cleanCode,
+      name: name.trim(),
       color: color || '#3b82f6',
       instructor: instructor || '',
       schedule: schedule || '',

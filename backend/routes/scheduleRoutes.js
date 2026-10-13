@@ -46,9 +46,31 @@ router.post('/', protect, async (req, res) => {
       });
     }
 
+    const cleanCode = subjectCode.trim();
+
+    // Prevent duplicates: Check if same schedule already exists for this user
+    let existingSchedule = await ClassSchedule.findOne({
+      user: req.user._id,
+      subjectCode: { $regex: new RegExp(`^${cleanCode.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') },
+      startTime,
+    });
+
+    if (existingSchedule) {
+      existingSchedule.subjectName = subjectName.trim();
+      if (days && days.length) existingSchedule.days = days;
+      if (endTime) existingSchedule.endTime = endTime;
+      if (instructor !== undefined) existingSchedule.instructor = instructor.trim();
+      if (room !== undefined) existingSchedule.room = room.trim();
+      if (color) existingSchedule.color = color;
+      existingSchedule.reminderMinutesBefore = Number(reminderMinutesBefore) || 15;
+      existingSchedule.isReminderActive = !!isReminderActive;
+      await existingSchedule.save();
+      return res.status(200).json({ success: true, schedule: existingSchedule, deduplicated: true });
+    }
+
     const schedule = await ClassSchedule.create({
       user: req.user._id,
-      subjectCode: subjectCode.trim(),
+      subjectCode: cleanCode,
       subjectName: subjectName.trim(),
       instructor: instructor?.trim() || '',
       room: room?.trim() || '',

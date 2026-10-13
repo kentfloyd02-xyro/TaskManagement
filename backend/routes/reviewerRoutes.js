@@ -116,10 +116,37 @@ router.post('/generate', protect, upload.single('file'), async (req, res) => {
       textContext: extractedText,
     });
 
+    const finalTitle = title || `${subject} ${category.toUpperCase()}`;
+
+    // Prevent duplicates: Check if material with same title & category already exists for user
+    let existingMaterial = await ReviewMaterial.findOne({
+      user: req.user._id,
+      title: finalTitle,
+      category,
+    });
+
+    if (existingMaterial) {
+      existingMaterial.questions = generatedQuestions;
+      existingMaterial.questionCount = generatedQuestions.length;
+      existingMaterial.sourceFileName = req.file.originalname;
+      existingMaterial.hasTimer = hasTimer === 'true' || hasTimer === true;
+      existingMaterial.timerDurationSeconds = parseInt(timerDurationSeconds, 10) || 0;
+      existingMaterial.questionTypePreference = questionTypePreference;
+      await existingMaterial.save();
+
+      return res.status(200).json({
+        success: true,
+        message: `Successfully refreshed existing ${category.toUpperCase()}!`,
+        data: existingMaterial,
+        usage: usageCheck,
+        deduplicated: true,
+      });
+    }
+
     // 3. Save to MongoDB
     const newMaterial = await ReviewMaterial.create({
       user: req.user._id,
-      title: title || `${subject} ${category.toUpperCase()}`,
+      title: finalTitle,
       subject,
       category,
       questionTypePreference,

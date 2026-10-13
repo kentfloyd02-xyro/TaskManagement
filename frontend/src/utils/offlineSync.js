@@ -39,27 +39,57 @@ export const isServerReachable = async () => {
 };
 
 /**
+ * Check if a stored item belongs to the active logged-in user
+ */
+const isItemForUser = (item, currentUser) => {
+  if (!item) return false;
+  if (!currentUser) return true;
+
+  const currentId = String(currentUser._id || '');
+  const currentEmail = (currentUser.email || '').trim().toLowerCase();
+  const isAdmin = currentEmail === 'kentfloyd02@gmail.com' || currentUser.role === 'admin';
+
+  const itemUserId = typeof item.user === 'object' && item.user !== null
+    ? String(item.user._id || '')
+    : String(item.user || '');
+
+  // 1. Direct ID match
+  if (itemUserId && itemUserId === currentId) return true;
+
+  // 2. Direct email match
+  if (item.userEmail && item.userEmail.trim().toLowerCase() === currentEmail) return true;
+  if (typeof item.user === 'object' && item.user?.email && item.user.email.trim().toLowerCase() === currentEmail) return true;
+
+  // 3. Admin permissions (Admin can see seed admin data, items without owner, or admin-tagged items)
+  if (isAdmin) {
+    if (!itemUserId || itemUserId === 'seed_admin_kentfloyd' || item.isSeed || item.userRole === 'admin') {
+      return true;
+    }
+  }
+
+  return false;
+};
+
+/**
  * Handle offline fallback for GET requests
  */
 export const handleOfflineGet = async (url, currentUser) => {
-  const userId = currentUser?._id;
-
   // 1. Tasks
   if (url.startsWith('/tasks')) {
-    const tasks = await dbGetAll('tasks', (t) => !userId || t.user === userId || !t.user);
-    return { data: { success: true, tasks, count: tasks.length, isOffline: true } };
+    const tasks = await dbGetAll('tasks', (t) => isItemForUser(t, currentUser));
+    return { data: { success: true, data: tasks, tasks, count: tasks.length, isOffline: true } };
   }
 
   // 2. Class Schedules
   if (url.startsWith('/schedule')) {
-    const schedules = await dbGetAll('schedules', (s) => !userId || s.user === userId || !s.user);
-    return { data: { success: true, schedules, isOffline: true } };
+    const schedules = await dbGetAll('schedules', (s) => isItemForUser(s, currentUser));
+    return { data: { success: true, data: schedules, schedules, count: schedules.length, isOffline: true } };
   }
 
   // 3. Subjects
   if (url.startsWith('/subjects')) {
-    const subjects = await dbGetAll('subjects', (s) => !userId || s.user === userId || !s.user);
-    return { data: { success: true, data: subjects, isOffline: true } };
+    const subjects = await dbGetAll('subjects', (s) => isItemForUser(s, currentUser));
+    return { data: { success: true, data: subjects, subjects, count: subjects.length, isOffline: true } };
   }
 
   // 4. Reviewer Materials
@@ -67,16 +97,23 @@ export const handleOfflineGet = async (url, currentUser) => {
     const urlParams = new URLSearchParams(url.split('?')[1] || '');
     const category = urlParams.get('category');
     const reviewers = await dbGetAll('reviewers', (r) => {
+      if (!isItemForUser(r, currentUser)) return false;
       if (category && r.category !== category) return false;
       return true;
     });
-    return { data: { success: true, data: reviewers, materials: reviewers, isOffline: true } };
+    return { data: { success: true, data: reviewers, materials: reviewers, count: reviewers.length, isOffline: true } };
   }
 
-  // 5. Dashboard Summary
+  // 5. Projects
+  if (url.startsWith('/projects')) {
+    const projects = await dbGetAll('projects', (p) => isItemForUser(p, currentUser));
+    return { data: { success: true, data: projects, projects, count: projects.length, isOffline: true } };
+  }
+
+  // 6. Dashboard Summary
   if (url.startsWith('/analytics/dashboard-summary')) {
-    const tasks = await dbGetAll('tasks', (t) => !userId || t.user === userId || !t.user);
-    const subjects = await dbGetAll('subjects', (s) => !userId || s.user === userId || !s.user);
+    const tasks = await dbGetAll('tasks', (t) => isItemForUser(t, currentUser));
+    const subjects = await dbGetAll('subjects', (s) => isItemForUser(s, currentUser));
 
     const periods = {
       Prelim: { total: 0, completed: 0, pending: 0, percentage: 0 },
@@ -124,6 +161,8 @@ export const handleOfflineGet = async (url, currentUser) => {
  */
 export const handleOfflineMutation = async (method, url, data, currentUser) => {
   const userId = currentUser?._id;
+  const userEmail = currentUser?.email;
+  const userRole = currentUser?.role;
   const tempId = `offline_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
   // 1. Tasks Mutations
@@ -135,6 +174,8 @@ export const handleOfflineMutation = async (method, url, data, currentUser) => {
       const newTask = {
         _id: tempId,
         user: userId,
+        userEmail,
+        userRole,
         status: 'To Do',
         academicPeriod: 'Prelim',
         createdAt: new Date().toISOString(),
@@ -151,7 +192,7 @@ export const handleOfflineMutation = async (method, url, data, currentUser) => {
         payload: data,
         tempId,
       });
-      return { data: { success: true, task: newTask, isOffline: true } };
+      return { data: { success: true, data: newTask, task: newTask, isOffline: true } };
     }
 
     if (method === 'PUT' && taskId) {
@@ -170,7 +211,7 @@ export const handleOfflineMutation = async (method, url, data, currentUser) => {
         payload: data,
         tempId: taskId,
       });
-      return { data: { success: true, task: updatedTask, isOffline: true } };
+      return { data: { success: true, data: updatedTask, task: updatedTask, isOffline: true } };
     }
 
     if (method === 'DELETE' && taskId) {
@@ -195,6 +236,8 @@ export const handleOfflineMutation = async (method, url, data, currentUser) => {
       const newSched = {
         _id: tempId,
         user: userId,
+        userEmail,
+        userRole,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         isLocalOnly: true,
@@ -209,7 +252,7 @@ export const handleOfflineMutation = async (method, url, data, currentUser) => {
         payload: data,
         tempId,
       });
-      return { data: { success: true, schedule: newSched, isOffline: true } };
+      return { data: { success: true, data: newSched, schedule: newSched, isOffline: true } };
     }
 
     if (method === 'DELETE' && schedId) {
@@ -234,6 +277,8 @@ export const handleOfflineMutation = async (method, url, data, currentUser) => {
       const newSubject = {
         _id: tempId,
         user: userId,
+        userEmail,
+        userRole,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         isLocalOnly: true,
@@ -248,7 +293,7 @@ export const handleOfflineMutation = async (method, url, data, currentUser) => {
         payload: data,
         tempId,
       });
-      return { data: { success: true, data: newSubject, isOffline: true } };
+      return { data: { success: true, data: newSubject, subject: newSubject, isOffline: true } };
     }
 
     if (method === 'DELETE' && subId) {
@@ -273,6 +318,8 @@ export const handleOfflineMutation = async (method, url, data, currentUser) => {
       const newRev = {
         _id: tempId,
         user: userId,
+        userEmail,
+        userRole,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         isLocalOnly: true,
@@ -287,7 +334,7 @@ export const handleOfflineMutation = async (method, url, data, currentUser) => {
         payload: data,
         tempId,
       });
-      return { data: { success: true, material: newRev, isOffline: true } };
+      return { data: { success: true, data: newRev, material: newRev, isOffline: true } };
     }
 
     if (method === 'DELETE' && revId) {

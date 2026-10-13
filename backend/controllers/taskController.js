@@ -100,14 +100,50 @@ exports.createTask = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please provide task title.' });
     }
 
+    const cleanTitle = title.trim();
+    const period = academicPeriod || 'Prelim';
+
+    // Prevent cross-device duplication: Check if task already exists for this user
+    let existingTask = await Task.findOne({
+      user: req.user._id,
+      title: { $regex: new RegExp(`^${cleanTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') },
+      academicPeriod: period,
+      isArchived: false,
+    });
+
+    if (existingTask) {
+      // Reconcile and update existing task instead of creating duplicate
+      if (description !== undefined) existingTask.description = description;
+      if (subject !== undefined) existingTask.subject = subject || null;
+      if (project !== undefined) existingTask.project = project || null;
+      if (taskType !== undefined) existingTask.taskType = taskType;
+      if (priority !== undefined) existingTask.priority = priority;
+      if (status !== undefined) existingTask.status = status;
+      if (deadline !== undefined) existingTask.deadline = deadline;
+      if (estimatedMinutes !== undefined) existingTask.estimatedMinutes = estimatedMinutes;
+      if (checklist !== undefined && Array.isArray(checklist) && checklist.length > 0) {
+        existingTask.checklist = checklist;
+      }
+      if (status === 'Completed' && !existingTask.completedAt) {
+        existingTask.completedAt = new Date();
+      }
+      await existingTask.save();
+
+      const populatedExisting = await Task.findById(existingTask._id)
+        .populate('subject', 'code name color')
+        .populate('project', 'title status');
+
+      return res.status(200).json({ success: true, data: populatedExisting, deduplicated: true });
+    }
+
     const task = await Task.create({
       user: req.user._id,
-      title,
+      title: cleanTitle,
       description: description || '',
       subject: subject || null,
       project: project || null,
       taskType: taskType || 'Assignment',
-      academicPeriod: academicPeriod || 'Prelim',
+      academicPeriod: period,
       priority: priority || 'Medium',
       status: status || 'To Do',
       deadline: deadline || null,
