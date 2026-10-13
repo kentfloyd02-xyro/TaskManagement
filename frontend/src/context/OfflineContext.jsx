@@ -1,18 +1,28 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import client from '../api/client';
+import { runBackgroundAutoSync } from '../utils/offlineSync';
+import { dbGetSyncQueue } from '../db/indexedDB';
 
 const OfflineContext = createContext();
-
-const LOCAL_STORAGE_TASKS_KEY = 'offline_cached_tasks';
-const LOCAL_STORAGE_QUEUE_KEY = 'offline_sync_queue';
 
 export const OfflineProvider = ({ children }) => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [syncStatus, setSyncStatus] = useState(''); // e.g., 'Synced 2 offline tasks!'
+  const [syncStatus, setSyncStatus] = useState('');
+  const [pendingQueueCount, setPendingQueueCount] = useState(0);
 
-  // Network listener
+  // Check pending offline queue count
+  const checkPendingQueue = async () => {
+    try {
+      const q = await dbGetSyncQueue();
+      setPendingQueueCount(q ? q.length : 0);
+    } catch (e) {
+      setPendingQueueCount(0);
+    }
+  };
+
   useEffect(() => {
+    checkPendingQueue();
+
     const handleOnline = () => {
       setIsOnline(true);
       triggerAutoSync();
@@ -20,12 +30,40 @@ export const OfflineProvider = ({ children }) => {
 
     const handleOffline = () => {
       setIsOnline(false);
+      checkPendingQueue();
+    };
+
+    const handleSyncComplete = (e) => {
+      const count = e.detail?.count || 1;
+      setSyncStatus(`Matagumpay na na-sync ang ${count} offline updates sa cloud!`);
+      checkPendingQueue();
+      window.dispatchEvent(
+        new CustomEvent('student-planner-island-notif', {
+          detail: {
+            id: 'sync_' + Date.now(),
+            type: 'success',
+            title: 'Cloud Sync Complete! ☁️',
+            subtitle: `Na-sync ang ${count} offline item(s) mula sa IndexedDB.`,
+            target: 'sync',
+          },
+        })
+      );
+      setTimeout(() => setSyncStatus(''), 4000);
     };
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
+    window.addEventListener('student-planner-sync-complete', handleSyncComplete);
 
-    // Initial check & sync if queue has items
+    // Visibility change check (when user reopens phone screen / browser tab)
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible' && navigator.onLine) {
+        triggerAutoSync();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    // Initial sync if online
     if (navigator.onLine) {
       triggerAutoSync();
     }
@@ -33,84 +71,22 @@ export const OfflineProvider = ({ children }) => {
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('student-planner-sync-complete', handleSyncComplete);
+      document.removeEventListener('visibilitychange', handleVisibility);
     };
   }, []);
 
-  // Offline queue storage helpers
-  const getQueue = () => {
-    try {
-      return JSON.parse(localStorage.getItem(LOCAL_STORAGE_QUEUE_KEY) || '[]');
-    } catch {
-      return [];
-    }
-  };
-
-  const setQueue = (q) => {
-    localStorage.setItem(LOCAL_STORAGE_QUEUE_KEY, JSON.stringify(q));
-  };
-
-  // Cached tasks helpers
-  const getCachedTasks = () => {
-    try {
-      return JSON.parse(localStorage.getItem(LOCAL_STORAGE_TASKS_KEY) || '[]');
-    } catch {
-      return [];
-    }
-  };
-
-  const setCachedTasks = (tasks) => {
-    localStorage.setItem(LOCAL_STORAGE_TASKS_KEY, JSON.stringify(tasks));
-  };
-
-  // Auto-sync offline mutations when connection resumes
   const triggerAutoSync = async () => {
-    const queue = getQueue();
-    if (queue.length === 0 || !navigator.onLine) return;
-
+    if (!navigator.onLine || isSyncing) return;
     setIsSyncing(true);
-    setSyncStatus(`Nag-si-sync ang ${queue.length} offline changes...`);
-
-    let remainingQueue = [];
-    let syncedCount = 0;
-
-    for (const action of queue) {
-      try {
-        if (action.type === 'CREATE_TASK') {
-          await client.post('/tasks', action.payload);
-          syncedCount++;
-        } else if (action.type === 'UPDATE_TASK') {
-          await client.put(`/tasks/${action.id}`, action.payload);
-          syncedCount++;
-        } else if (action.type === 'DELETE_TASK') {
-          await client.delete(`/tasks/${action.id}`);
-          syncedCount++;
-        }
-      } catch (err) {
-        console.error('Failed syncing action:', action, err);
-        // keep failed action in queue
-        remainingQueue.push(action);
-      }
+    try {
+      await runBackgroundAutoSync();
+      await checkPendingQueue();
+    } catch (e) {
+      console.warn('Auto-sync execution error:', e);
+    } finally {
+      setIsSyncing(false);
     }
-
-    setQueue(remainingQueue);
-    setIsSyncing(false);
-
-    if (syncedCount > 0) {
-      setSyncStatus(`Matagumpay na na-sync ang ${syncedCount} offline tasks sa database!`);
-      setTimeout(() => setSyncStatus(''), 5000);
-    }
-  };
-
-  // Add mutation to offline queue
-  const enqueueAction = (type, payload, id = null) => {
-    const queue = getQueue();
-    queue.push({
-      id,
-      type,
-      payload,
-      timestamp: Date.now(),
-    });
-    setQueue(queue);
   };
 
   return (
@@ -119,10 +95,8 @@ export const OfflineProvider = ({ children }) => {
         isOnline,
         isSyncing,
         syncStatus,
+        pendingQueueCount,
         triggerAutoSync,
-        enqueueAction,
-        getCachedTasks,
-        setCachedTasks,
       }}
     >
       {children}

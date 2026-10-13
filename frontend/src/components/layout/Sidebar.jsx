@@ -21,13 +21,17 @@ import {
   Calendar,
   Download,
   Smile,
+  RefreshCw,
+  Database,
 } from 'lucide-react';
+import { useOffline } from '../../context/OfflineContext';
 import UserAvatar from '../common/UserAvatar';
 import AvatarPickerModal from '../common/AvatarPickerModal';
 import InstallAppModal from '../common/InstallAppModal';
 
 const Sidebar = ({ onQuickAddClick }) => {
   const { user, logout, theme, toggleTheme } = useAuth();
+  const { isOnline, isSyncing, pendingQueueCount, triggerAutoSync } = useOffline();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [canInstall, setCanInstall] = useState(!!window.deferredPrompt);
@@ -238,6 +242,21 @@ const Sidebar = ({ onQuickAddClick }) => {
               <LogOut className="w-4 h-4" />
             </button>
           </div>
+
+          {/* Offline Sync Status Banner (if pending updates or syncing) */}
+          {(pendingQueueCount > 0 || isSyncing) && (
+            <button
+              onClick={triggerAutoSync}
+              className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-[11px] font-bold cursor-pointer hover:bg-amber-500/20 active:scale-95 transition-all"
+              title="I-sync ang IndexedDB updates sa cloud"
+            >
+              <div className="flex items-center gap-1.5">
+                <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin text-blue-500' : 'text-amber-500'}`} />
+                <span>{isSyncing ? 'Nag-si-sync...' : `${pendingQueueCount} offline update(s)`}</span>
+              </div>
+              <span className="text-[9px] uppercase font-black px-1.5 py-0.5 rounded bg-amber-500/25">Sync Now</span>
+            </button>
+          )}
 
           {/* Interactive Profile Card with 3D Avatar */}
           <div

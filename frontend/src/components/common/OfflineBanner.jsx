@@ -3,9 +3,9 @@ import { useOffline } from '../../context/OfflineContext';
 import { WifiOff, Wifi, RefreshCw, CheckCircle2 } from 'lucide-react';
 
 const OfflineBanner = () => {
-  const { isOnline, isSyncing, syncStatus, triggerAutoSync } = useOffline();
+  const { isOnline, isSyncing, syncStatus, pendingQueueCount } = useOffline();
 
-  if (isOnline && !syncStatus && !isSyncing) {
+  if (isOnline && !syncStatus && !isSyncing && pendingQueueCount === 0) {
     return null;
   }
 
@@ -16,12 +16,19 @@ const OfflineBanner = () => {
           <div className="flex items-center gap-2">
             <WifiOff className="w-4 h-4 shrink-0 text-amber-500" />
             <span>
-              <strong>Offline Mode:</strong> Pwede mong gamitin ang Tasks at Preset Reviewer. Ang AI Chatbot at Question Generator ay nangangailangan ng internet.
+              <strong>Offline Mode (IndexedDB Active):</strong> Naa-access ang login, tasks, class schedule, subjects, at exam reviewer kahit walang internet o naka-localhost sa CP!
             </span>
           </div>
-          <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-amber-500/20 text-[10px] font-black uppercase">
-            Local Storage Active
-          </span>
+          <div className="flex items-center gap-2 shrink-0">
+            {pendingQueueCount > 0 && (
+              <span className="px-2 py-0.5 rounded-full bg-amber-500/30 text-[10px] font-black uppercase text-amber-700 dark:text-amber-300">
+                {pendingQueueCount} pending sync
+              </span>
+            )}
+            <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase">
+              IndexedDB Running
+            </span>
+          </div>
         </div>
       )}
 

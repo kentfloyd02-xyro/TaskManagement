@@ -1,5 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import api from '../api/client';
+import {
+  dbSaveUser,
+  dbGetUserByEmail,
+  dbVerifyOfflineCredentials,
+  dbAddToSyncQueue,
+} from '../db/indexedDB';
+import { runBackgroundAutoSync } from '../utils/offlineSync';
 
 const AuthContext = createContext();
 
@@ -19,6 +26,7 @@ export const AuthProvider = ({ children }) => {
     }
     return null;
   });
+
   const [token, setToken] = useState(() => localStorage.getItem('student_token') || sessionStorage.getItem('student_token'));
   const [loading, setLoading] = useState(true);
   const [theme, setTheme] = useState(() => localStorage.getItem('student_theme') || 'dark');
@@ -38,7 +46,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const verifyUser = async () => {
       if (token) {
-        // If offline, trust local saved session instead of logging out
+        // If offline, trust local saved session / IndexedDB
         if (!navigator.onLine) {
           const cachedUser =
             localStorage.getItem('student_user') || sessionStorage.getItem('student_user');
@@ -53,12 +61,14 @@ export const AuthProvider = ({ children }) => {
 
         try {
           const res = await api.get('/auth/me');
-          if (res.data.success) {
+          if (res.data?.success) {
             const userData = res.data.user;
             if (userData.email && userData.email.toLowerCase() === 'kentfloyd02@gmail.com') {
               userData.role = 'admin';
             }
             setUser(userData);
+            dbSaveUser(userData).catch(() => {});
+
             if (localStorage.getItem('student_token')) {
               localStorage.setItem('student_user', JSON.stringify(userData));
             } else if (sessionStorage.getItem('student_token')) {
@@ -69,12 +79,19 @@ export const AuthProvider = ({ children }) => {
             }
           }
         } catch (err) {
-          // Only log out if specifically a 401 Unauthorized, not on network connection errors
+          // If 401 Unauthorized specifically, log out. If network error, keep offline session!
           if (err.response && err.response.status === 401) {
             console.error('Session verify unauthorized, logging out');
             logout();
           } else {
             console.warn('Network issue during session verify, keeping offline session:', err);
+            const cachedUser =
+              localStorage.getItem('student_user') || sessionStorage.getItem('student_user');
+            if (cachedUser) {
+              try {
+                setUser(JSON.parse(cachedUser));
+              } catch (e) {}
+            }
           }
         }
       }
@@ -84,112 +101,210 @@ export const AuthProvider = ({ children }) => {
     verifyUser();
   }, [token]);
 
+  // LOGIN (With IndexedDB Offline Support)
   const login = async (email, password, rememberMe = false) => {
-    // OFFLINE LOGIN SUPPORT: If offline, check against previously remembered user credentials/profile
-    if (!navigator.onLine) {
-      const offlineProfiles = JSON.parse(localStorage.getItem('offline_saved_accounts') || '[]');
-      const matched = offlineProfiles.find(
-        (acc) => acc.email.toLowerCase() === email.trim().toLowerCase()
-      );
+    const cleanEmail = email.trim().toLowerCase();
 
-      if (matched) {
-        const dummyToken = matched.token || 'offline_cached_token_' + Date.now();
-        const userData = matched.user;
+    // 1. Try Online Login first if navigator is online
+    if (navigator.onLine) {
+      try {
+        const res = await api.post('/auth/login', { email: cleanEmail, password });
+        if (res.data?.success) {
+          const userData = res.data.user;
+          if (cleanEmail === 'kentfloyd02@gmail.com') {
+            userData.role = 'admin';
+          }
+          setToken(res.data.token);
+          setUser(userData);
 
-        setToken(dummyToken);
-        setUser(userData);
+          // Save into IndexedDB for future offline logins!
+          await dbSaveUser(userData, password);
 
-        const storage = rememberMe ? localStorage : sessionStorage;
-        storage.setItem('student_token', dummyToken);
-        storage.setItem('student_user', JSON.stringify(userData));
+          // Clean old states
+          localStorage.removeItem('student_token');
+          localStorage.removeItem('student_user');
+          sessionStorage.removeItem('student_token');
+          sessionStorage.removeItem('student_user');
 
-        return { success: true, user: userData, token: dummyToken, isOffline: true };
-      } else {
-        throw {
-          response: {
-            data: {
-              message:
-                'Offline Mode: Walang naka-save na offline profile para sa email na ito. Kailangan muna mag-login nang may internet kahit isang beses sa device na ito.',
-            },
-          },
-        };
+          const storage = rememberMe ? localStorage : sessionStorage;
+          storage.setItem('student_token', res.data.token);
+          storage.setItem('student_user', JSON.stringify(userData));
+
+          if (userData.themePreference) {
+            setTheme(userData.themePreference);
+          }
+          return res.data;
+        }
+      } catch (err) {
+        // If wrong credentials 400/401 from server, bubble up error
+        if (err.response && [400, 401, 404].includes(err.response.status)) {
+          throw err;
+        }
+        // If server 502/503 or network failure, fall down to IndexedDB offline login!
+        console.warn('Server unreachable during login, attempting IndexedDB offline auth...', err);
       }
     }
 
-    // ONLINE LOGIN
-    const res = await api.post('/auth/login', { email, password });
-    if (res.data.success) {
-      const userData = res.data.user;
-      if (userData.email && userData.email.toLowerCase() === 'kentfloyd02@gmail.com') {
-        userData.role = 'admin';
-      }
-      setToken(res.data.token);
-      setUser(userData);
+    // 2. OFFLINE INDEXEDDB LOGIN FALLBACK
+    const localUser = await dbVerifyOfflineCredentials(cleanEmail, password);
+    if (localUser) {
+      const dummyToken = `offline_token_${Date.now()}`;
+      setToken(dummyToken);
+      setUser(localUser);
 
-      // Clean old states
-      localStorage.removeItem('student_token');
-      localStorage.removeItem('student_user');
-      sessionStorage.removeItem('student_token');
-      sessionStorage.removeItem('student_user');
-
-      // If Remember Me is checked, persist in localStorage; otherwise, use sessionStorage
       const storage = rememberMe ? localStorage : sessionStorage;
-      storage.setItem('student_token', res.data.token);
-      storage.setItem('student_user', JSON.stringify(userData));
+      storage.setItem('student_token', dummyToken);
+      storage.setItem('student_user', JSON.stringify(localUser));
 
-      // Cache account in offline accounts pool so user can log in offline anytime!
-      const offlineProfiles = JSON.parse(localStorage.getItem('offline_saved_accounts') || '[]');
-      const filtered = offlineProfiles.filter(
-        (acc) => acc.email.toLowerCase() !== userData.email.toLowerCase()
-      );
-      filtered.push({
-        email: userData.email.toLowerCase(),
-        token: res.data.token,
-        user: userData,
-        cachedAt: Date.now(),
-      });
-      localStorage.setItem('offline_saved_accounts', JSON.stringify(filtered));
-
-      if (userData.themePreference) {
-        setTheme(userData.themePreference);
-      }
-      return res.data;
+      return {
+        success: true,
+        user: localUser,
+        token: dummyToken,
+        isOffline: true,
+        message: 'Naka-login sa Offline Mode gamit ang IndexedDB.',
+      };
     }
+
+    // If not found in IndexedDB
+    throw {
+      response: {
+        data: {
+          message:
+            'Offline Mode: Walang account na tumutugma sa IndexedDB sa CP/device na ito. Mag-register o mag-login nang may internet muna.',
+        },
+      },
+    };
   };
 
+  // REGISTER (With IndexedDB Offline Support)
   const register = async (formData, rememberMe = false) => {
-    const res = await api.post('/auth/register', formData);
-    if (res.data.success) {
-      setToken(res.data.token);
-      setUser(res.data.user);
+    const cleanEmail = formData.email.trim().toLowerCase();
+    const defaultAvatar = formData.gender === 'female' ? 'female-wolf' : 'male-wolf';
 
-      localStorage.removeItem('student_token');
-      localStorage.removeItem('student_user');
-      sessionStorage.removeItem('student_token');
-      sessionStorage.removeItem('student_user');
+    // 1. Try Online Register first if navigator is online
+    if (navigator.onLine) {
+      try {
+        const res = await api.post('/auth/register', { ...formData, email: cleanEmail });
+        if (res.data?.success) {
+          const userData = res.data.user;
+          setToken(res.data.token);
+          setUser(userData);
 
-      const storage = rememberMe ? localStorage : sessionStorage;
-      storage.setItem('student_token', res.data.token);
-      storage.setItem('student_user', JSON.stringify(res.data.user));
-      return res.data;
+          // Save into IndexedDB
+          await dbSaveUser(userData, formData.password);
+
+          localStorage.removeItem('student_token');
+          localStorage.removeItem('student_user');
+          sessionStorage.removeItem('student_token');
+          sessionStorage.removeItem('student_user');
+
+          const storage = rememberMe ? localStorage : sessionStorage;
+          storage.setItem('student_token', res.data.token);
+          storage.setItem('student_user', JSON.stringify(userData));
+          return res.data;
+        }
+      } catch (err) {
+        if (err.response && [400, 409].includes(err.response.status)) {
+          throw err; // e.g. Email already registered
+        }
+        console.warn('Server unreachable during register, falling back to IndexedDB...', err);
+      }
     }
+
+    // 2. OFFLINE INDEXEDDB REGISTRATION FALLBACK
+    // Check if user already exists locally
+    const existing = await dbGetUserByEmail(cleanEmail);
+    if (existing) {
+      throw {
+        response: {
+          data: {
+            message: 'Mayroon nang account sa IndexedDB gamit ang email na ito.',
+          },
+        },
+      };
+    }
+
+    const localUser = {
+      _id: `offline_user_${Date.now()}`,
+      name: formData.name,
+      email: cleanEmail,
+      course: formData.course || 'College Student',
+      yearLevel: formData.yearLevel || '1st Year',
+      gender: formData.gender || 'male',
+      avatar: formData.avatar || defaultAvatar,
+      role: cleanEmail === 'kentfloyd02@gmail.com' ? 'admin' : 'student',
+      themePreference: 'dark',
+      createdAt: new Date().toISOString(),
+      isLocalOnly: true,
+    };
+
+    // Save account in IndexedDB
+    await dbSaveUser(localUser, formData.password);
+
+    // Queue registration for background sync when reconnected
+    await dbAddToSyncQueue({
+      type: 'REGISTER_USER',
+      entity: 'users',
+      url: '/auth/register',
+      method: 'POST',
+      payload: { ...formData, email: cleanEmail },
+      tempId: localUser._id,
+    });
+
+    const dummyToken = `offline_token_${Date.now()}`;
+    setToken(dummyToken);
+    setUser(localUser);
+
+    const storage = rememberMe ? localStorage : sessionStorage;
+    storage.setItem('student_token', dummyToken);
+    storage.setItem('student_user', JSON.stringify(localUser));
+
+    return {
+      success: true,
+      user: localUser,
+      token: dummyToken,
+      isOffline: true,
+      message: 'Matagumpay na nag-register offline sa IndexedDB!',
+    };
   };
 
+  // UPDATE PROFILE (With IndexedDB Support)
   const updateProfile = async (data) => {
-    const res = await api.put('/auth/profile', data);
-    if (res.data.success) {
-      setUser(res.data.user);
+    // Update local state and IndexedDB immediately
+    if (user) {
+      const updatedLocalUser = { ...user, ...data };
+      setUser(updatedLocalUser);
+      await dbSaveUser(updatedLocalUser);
+
       if (localStorage.getItem('student_token')) {
-        localStorage.setItem('student_user', JSON.stringify(res.data.user));
+        localStorage.setItem('student_user', JSON.stringify(updatedLocalUser));
       }
       if (sessionStorage.getItem('student_token')) {
-        sessionStorage.setItem('student_user', JSON.stringify(res.data.user));
+        sessionStorage.setItem('student_user', JSON.stringify(updatedLocalUser));
       }
-      if (data.themePreference) {
-        setTheme(data.themePreference);
-      }
-      return res.data;
     }
+
+    if (navigator.onLine) {
+      try {
+        const res = await api.put('/auth/profile', data);
+        if (res.data?.success) {
+          setUser(res.data.user);
+          await dbSaveUser(res.data.user);
+          if (data.themePreference) {
+            setTheme(data.themePreference);
+          }
+          return res.data;
+        }
+      } catch (err) {
+        console.warn('Profile update queued for online sync:', err);
+      }
+    }
+
+    if (data.themePreference) {
+      setTheme(data.themePreference);
+    }
+
+    return { success: true, user: { ...user, ...data }, isOffline: true };
   };
 
   const toggleTheme = () => {

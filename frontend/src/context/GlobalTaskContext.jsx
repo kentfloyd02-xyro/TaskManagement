@@ -45,6 +45,16 @@ export const GlobalTaskProvider = ({ children }) => {
 
   const dismissIsland = () => setIslandNotification(null);
 
+  React.useEffect(() => {
+    const handleIslandEvent = (e) => {
+      if (e.detail) {
+        triggerIsland(e.detail);
+      }
+    };
+    window.addEventListener('student-planner-island-notif', handleIslandEvent);
+    return () => window.removeEventListener('student-planner-island-notif', handleIslandEvent);
+  }, []);
+
   return (
     <GlobalTaskContext.Provider
       value={{

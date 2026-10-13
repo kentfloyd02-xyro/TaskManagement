@@ -52,7 +52,7 @@ const DynamicIslandNotification = () => {
         </div>
 
         <span className="hidden sm:inline-block px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-white/10 opacity-70">
-          Click to View
+          {islandNotification.target === 'sync' ? 'Auto-Synced' : 'Click to View'}
         </span>
 
         <button
