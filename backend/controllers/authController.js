@@ -370,3 +370,35 @@ exports.resetPassword = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// @desc    Get existing user accounts for offline IndexedDB syncing
+// @route   GET /api/auth/offline-accounts
+// @access  Public
+exports.getOfflineAccounts = async (req, res) => {
+  try {
+    const users = await User.find({});
+    const safeAccounts = users.map((u) => {
+      const cleanEmail = u.email ? u.email.toLowerCase() : '';
+      return {
+        _id: u._id,
+        name: u.name,
+        email: cleanEmail,
+        course: u.course || 'College Student',
+        yearLevel: u.yearLevel || '1st Year',
+        role: u.role || (cleanEmail === 'kentfloyd02@gmail.com' ? 'admin' : 'student'),
+        themePreference: u.themePreference || 'dark',
+        gender: u.gender || 'male',
+        avatar: u.avatar || (u.gender === 'female' ? 'female-wolf' : 'male-wolf'),
+        updatedAt: u.updatedAt || new Date().toISOString(),
+      };
+    });
+
+    res.json({
+      success: true,
+      count: safeAccounts.length,
+      accounts: safeAccounts,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

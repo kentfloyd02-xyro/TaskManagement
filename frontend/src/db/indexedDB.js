@@ -7,6 +7,106 @@ const DB_VERSION = 1;
 let dbPromise = null;
 
 /**
+ * Pre-seeded existing accounts to guarantee instant offline access
+ * even on brand new mobile phone / localhost runs with zero internet.
+ */
+export const SEED_EXISTING_ACCOUNTS = [
+  {
+    _id: 'seed_admin_kentfloyd',
+    name: 'Kent Floyd (Admin)',
+    email: 'kentfloyd02@gmail.com',
+    role: 'admin',
+    course: 'BS Information Technology',
+    yearLevel: '4th Year',
+    gender: 'male',
+    avatar: 'male-wolf',
+    themePreference: 'dark',
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    _id: 'seed_demo_student',
+    name: 'Demo Student',
+    email: 'student@example.com',
+    role: 'student',
+    course: 'BS Computer Science',
+    yearLevel: '1st Year',
+    gender: 'male',
+    avatar: 'male-ninja',
+    themePreference: 'dark',
+    updatedAt: new Date().toISOString(),
+  },
+];
+
+/**
+ * Automatically seeds existing default accounts and migrates
+ * any previously cached accounts from localStorage into IndexedDB.
+ */
+const seedInitialAccounts = (db) => {
+  try {
+    const tx = db.transaction(['users'], 'readwrite');
+    const store = tx.objectStore('users');
+
+    // 1. Seed built-in accounts if not yet present
+    SEED_EXISTING_ACCOUNTS.forEach((account) => {
+      const getReq = store.get(account.email);
+      getReq.onsuccess = () => {
+        if (!getReq.result) {
+          store.put(account);
+        }
+      };
+    });
+
+    // 2. Migrate current active user from localStorage if present
+    const rawLocalUser = localStorage.getItem('student_user') || sessionStorage.getItem('student_user');
+    if (rawLocalUser) {
+      try {
+        const parsed = JSON.parse(rawLocalUser);
+        if (parsed && parsed.email) {
+          const cleanEmail = parsed.email.trim().toLowerCase();
+          const getReq = store.get(cleanEmail);
+          getReq.onsuccess = () => {
+            if (!getReq.result) {
+              store.put({
+                ...parsed,
+                email: cleanEmail,
+                updatedAt: new Date().toISOString(),
+              });
+            }
+          };
+        }
+      } catch (e) {}
+    }
+
+    // 3. Migrate any legacy offline saved accounts list
+    const rawAccountsList = localStorage.getItem('offline_saved_accounts');
+    if (rawAccountsList) {
+      try {
+        const parsedList = JSON.parse(rawAccountsList);
+        if (Array.isArray(parsedList)) {
+          parsedList.forEach((acc) => {
+            if (acc && acc.email) {
+              const cleanEmail = acc.email.trim().toLowerCase();
+              const getReq = store.get(cleanEmail);
+              getReq.onsuccess = () => {
+                if (!getReq.result) {
+                  store.put({
+                    ...acc,
+                    email: cleanEmail,
+                    updatedAt: new Date().toISOString(),
+                  });
+                }
+              };
+            }
+          });
+        }
+      } catch (e) {}
+    }
+  } catch (err) {
+    console.warn('Initial accounts seed error:', err);
+  }
+};
+
+/**
  * Open or upgrade IndexedDB database
  */
 export const openDB = () => {
@@ -76,7 +176,9 @@ export const openDB = () => {
     };
 
     request.onsuccess = (event) => {
-      resolve(event.target.result);
+      const db = event.target.result;
+      seedInitialAccounts(db);
+      resolve(db);
     };
 
     request.onerror = (event) => {
@@ -202,15 +304,58 @@ export const dbGetUserByEmail = async (email) => {
 };
 
 export const dbVerifyOfflineCredentials = async (email, password) => {
-  const user = await dbGetUserByEmail(email);
+  if (!email) return null;
+  const cleanEmail = email.trim().toLowerCase();
+  const user = await dbGetUserByEmail(cleanEmail);
   if (!user) return null;
 
-  // If user has saved password, compare
-  if (user.password && password && user.password !== password) {
+  // 1. Kung may saved password sa IndexedDB, i-compare
+  if (user.password) {
+    if (user.password === password) {
+      return user;
+    }
     return null;
   }
 
+  // 2. Kung pre-seeded o cloud-synced account na wala pang saved password sa client:
+  // I-record ang nilagay na password para sa account na ito upang magamit sa future logins
+  if (password) {
+    user.password = password;
+    await dbPut('users', user);
+  }
+
   return user;
+};
+
+/**
+ * Silently fetches existing accounts from MongoDB/server
+ * and populates them into IndexedDB users store so all current
+ * users become immediately available offline on mobile/desktop localhost.
+ */
+export const syncExistingAccountsFromCloud = async (apiClient) => {
+  if (!navigator.onLine || !apiClient) return [];
+  try {
+    const res = await apiClient.get('/auth/offline-accounts');
+    if (res.data?.success && Array.isArray(res.data.accounts)) {
+      const accounts = res.data.accounts;
+      for (const acc of accounts) {
+        if (!acc.email) continue;
+        const cleanEmail = acc.email.trim().toLowerCase();
+        const existing = await dbGetUserByEmail(cleanEmail);
+        await dbPut('users', {
+          ...existing,
+          ...acc,
+          email: cleanEmail,
+          password: existing?.password || '',
+          updatedAt: acc.updatedAt || new Date().toISOString(),
+        });
+      }
+      return accounts;
+    }
+  } catch (err) {
+    console.warn('Silent cloud accounts sync note (offline or network fallback):', err.message);
+  }
+  return [];
 };
 
 // ==========================================

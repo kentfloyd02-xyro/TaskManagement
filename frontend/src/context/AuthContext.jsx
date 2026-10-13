@@ -1,10 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import api from '../api/client';
 import {
+  openDB,
   dbSaveUser,
   dbGetUserByEmail,
   dbVerifyOfflineCredentials,
   dbAddToSyncQueue,
+  syncExistingAccountsFromCloud,
 } from '../db/indexedDB';
 import { runBackgroundAutoSync } from '../utils/offlineSync';
 
@@ -30,6 +32,23 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(() => localStorage.getItem('student_token') || sessionStorage.getItem('student_token'));
   const [loading, setLoading] = useState(true);
   const [theme, setTheme] = useState(() => localStorage.getItem('student_theme') || 'dark');
+
+  // Initialize IndexedDB and automatically sync all existing accounts
+  useEffect(() => {
+    // 1. Ensure IndexedDB is initialized and pre-seeded with existing accounts
+    openDB().catch((err) => console.warn('IndexedDB initialization notice:', err));
+
+    // 2. Fetch all cloud accounts and store them in IndexedDB for 100% offline access
+    const syncAccounts = () => {
+      if (navigator.onLine) {
+        syncExistingAccountsFromCloud(api).catch(() => {});
+      }
+    };
+
+    syncAccounts();
+    window.addEventListener('online', syncAccounts);
+    return () => window.removeEventListener('online', syncAccounts);
+  }, []);
 
   // Apply theme class to <html> element
   useEffect(() => {
